@@ -1,0 +1,88 @@
+<div class="rounded-xl shadow-md bg-white overflow-hidden">
+  <div class="p-6 border-b border-gray-200">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <h3 class="text-lg font-semibold text-gray-800">Venues List</h3>
+      <a href="/admin/venues/add" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium whitespace-nowrap">
+        Add Venue
+      </a>
+    </div>
+  </div>
+  <div class="overflow-x-auto">
+    <table id="venues-table" class="w-full text-sm">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Address</th>
+          <th>Lat</th>
+          <th>Lng</th>
+          <th>Created By</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  var venuesTable;
+  $(document).ready(function() {
+    venuesTable = $('#venues-table').DataTable({
+      processing: true,
+      serverSide: true,
+      ajax: '/admin/venues/datatable',
+      order: [[6, 'desc']],
+      pageLength: 10,
+      columns: [
+        { data: 'id' },
+        { data: 'title' },
+        {
+          data: 'address',
+          orderable: false,
+          render: function(data) {
+            var short = data && data.length > 50 ? data.substring(0, 50) + '...' : data;
+            return '<span title="' + (data || '').replace(/"/g, '&quot;') + '">' + (short || '-') + '</span>';
+          }
+        },
+        { data: 'lat', orderable: false },
+        { data: 'lng', orderable: false },
+        {
+          data: 'created_by',
+          orderable: false,
+          searchable: false,
+          render: function(data) {
+            return '<span class="inline-flex px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-700">' + (data || 'Admin') + '</span>';
+          }
+        },
+        {
+          data: 'createdAt',
+          render: function(data) {
+            return window.formatDateDMY(data);
+          }
+        },
+        {
+          data: null,
+          orderable: false,
+          searchable: false,
+          render: function(data, type, row) {
+            return '<div class="flex gap-2">' +
+              '<a href="/admin/venues/' + row.id + '/edit" class="px-3 py-1.5 bg-primary/10 text-primary rounded-md hover:bg-primary hover:text-white transition-colors text-xs font-medium">Edit</a>' +
+              '<button type="button" onclick="deleteVenue(' + row.id + ')" class="px-3 py-1.5 bg-red-100 text-red-600 rounded-md hover:bg-red-600 hover:text-white transition-colors text-xs font-medium">Delete</button>' +
+              '</div>';
+          }
+        }
+      ],
+      language: {
+        processing: '<div class="flex items-center gap-2 text-gray-500"><svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Loading...</div>',
+        emptyTable: 'No venues found',
+        zeroRecords: 'No matching venues found'
+      }
+    });
+  });
+
+  function deleteVenue(id) {
+    window.ajaxDelete('/admin/venues/' + id + '/delete', 'Delete Venue?', 'This venue will be soft deleted.', venuesTable);
+  }
+</script>

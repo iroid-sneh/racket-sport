@@ -1,0 +1,232 @@
+<!-- Back Button -->
+<div class="mb-6">
+  <a href="<%= basePath %>" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to Courts
+  </a>
+</div>
+
+<div class="rounded-xl shadow-md bg-white overflow-hidden">
+  <div class="p-6 border-b border-gray-200">
+    <h3 class="text-lg font-semibold text-gray-800">Add Court</h3>
+  </div>
+  <div class="p-6">
+    <form id="add-form" enctype="multipart/form-data" autocomplete="off">
+
+      <!-- Court Details -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Venue <span class="text-red-500">*</span></label>
+          <select name="venue_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+            <option value="">Select Venue</option>
+            <% if (typeof venues !== 'undefined' && venues) { %>
+              <% venues.forEach(function(v) { %>
+                <option value="<%= v.id %>"><%= v.title %></option>
+              <% }); %>
+            <% } %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-red-500">*</span></label>
+          <input type="text" name="title" required autocomplete="off" placeholder="Enter court title"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Sport Type</label>
+          <div class="flex flex-wrap gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="sports[]" value="1" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
+              <span class="text-sm text-gray-700">Tennis</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="sports[]" value="2" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
+              <span class="text-sm text-gray-700">Padel</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="sports[]" value="3" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
+              <span class="text-sm text-gray-700">Pickleball</span>
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Court Image</label>
+          <input type="file" name="court_image" accept="image/*"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm" />
+        </div>
+      </div>
+
+      <!-- Weekly Schedule Section -->
+      <div class="mt-8 mb-6">
+        <h4 class="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Weekly Schedule
+        </h4>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border border-gray-200 rounded-lg">
+            <thead>
+              <tr class="bg-gray-50">
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Day</th>
+                <th class="px-4 py-3 text-center font-medium text-gray-600">Open</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Start Time</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">End Time</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Price (Per Hour)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']; %>
+              <% dayNames.forEach(function(dayName, idx) { %>
+                <tr class="border-t border-gray-100 schedule-row" data-day="<%= idx %>">
+                  <td class="px-4 py-3 font-medium text-gray-800"><%= dayName %></td>
+                  <td class="px-4 py-3 text-center">
+                    <input type="checkbox" class="schedule-open-cb w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer" data-day="<%= idx %>" />
+                  </td>
+                  <td class="px-4 py-3">
+                    <input type="time" class="schedule-start w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent" data-day="<%= idx %>" disabled />
+                  </td>
+                  <td class="px-4 py-3">
+                    <input type="time" class="schedule-end w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent" data-day="<%= idx %>" disabled />
+                  </td>
+                  <td class="px-4 py-3">
+                    <input type="number" class="schedule-price w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent" step="0.01" min="0" value="0" data-day="<%= idx %>" disabled />
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="flex gap-3 justify-end pt-4 border-t border-gray-200">
+        <a href="<%= basePath %>" class="px-6 py-2 border rounded-lg hover:bg-gray-100 text-sm font-medium">Cancel</a>
+        <button type="submit" id="add-btn" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium">Add Court</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Toggle schedule inputs when checkbox is clicked
+  document.querySelectorAll('.schedule-open-cb').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var day = this.getAttribute('data-day');
+      var row = document.querySelector('.schedule-row[data-day="' + day + '"]');
+      var inputs = row.querySelectorAll('.schedule-start, .schedule-end, .schedule-price');
+      inputs.forEach(function(input) {
+        input.disabled = !cb.checked;
+        if (!cb.checked) {
+          input.classList.add('bg-gray-100', 'text-gray-400');
+        } else {
+          input.classList.remove('bg-gray-100', 'text-gray-400');
+        }
+      });
+    });
+  });
+
+  // Form submission
+  document.getElementById('add-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('add-btn');
+    var formData = new FormData(this);
+
+    // Combine sports[] into sport_type
+    var sportsArr = [];
+    formData.getAll('sports[]').forEach(function(val) {
+      sportsArr.push(val);
+    });
+    formData.delete('sports[]');
+    if (sportsArr.length) {
+      formData.append('sport_type', sportsArr.join(','));
+    }
+
+    // Build schedules array from table rows
+    var schedules = [];
+    document.querySelectorAll('.schedule-row').forEach(function(row) {
+      var day = row.getAttribute('data-day');
+      var isOpen = row.querySelector('.schedule-open-cb').checked;
+      var startTime = row.querySelector('.schedule-start').value;
+      var endTime = row.querySelector('.schedule-end').value;
+      var price = row.querySelector('.schedule-price').value;
+
+      schedules.push({
+        day_of_week: day,
+        is_open: isOpen,
+        start_time: startTime || '',
+        end_time: endTime || '',
+        price: price || '0'
+      });
+    });
+
+    // Convert FormData to JSON body (since we need nested schedules array)
+    var body = {};
+    formData.forEach(function(val, key) {
+      if (key !== 'court_image') {
+        body[key] = val;
+      }
+    });
+    body.schedules = schedules;
+
+    // If there's a file, use FormData approach
+    var fileInput = document.querySelector('input[name="court_image"]');
+    var hasFile = fileInput && fileInput.files.length > 0;
+
+    window.showBtnLoader(btn);
+
+    if (hasFile) {
+      // Use FormData with file + schedules as JSON string
+      var fd = new FormData();
+      fd.append('title', body.title || '');
+      fd.append('venue_id', body.venue_id || '');
+      if (body.sport_type) fd.append('sport_type', body.sport_type);
+      fd.append('court_image', fileInput.files[0]);
+      fd.append('schedules', JSON.stringify(schedules));
+
+      fetch('<%= basePath %>', {
+        method: 'POST',
+        body: fd,
+        headers: { 'Accept': 'application/json' }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        window.hideBtnLoader(btn);
+        if (data.success) {
+          window.ajaxSuccess(data.message);
+          setTimeout(function() { window.location.href = '<%= basePath %>'; }, 1200);
+        } else {
+          window.ajaxError(data.message);
+        }
+      })
+      .catch(function() {
+        window.hideBtnLoader(btn);
+        window.ajaxError('Something went wrong');
+      });
+    } else {
+      // JSON submission without file
+      fetch('<%= basePath %>', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        window.hideBtnLoader(btn);
+        if (data.success) {
+          window.ajaxSuccess(data.message);
+          setTimeout(function() { window.location.href = '<%= basePath %>'; }, 1200);
+        } else {
+          window.ajaxError(data.message);
+        }
+      })
+      .catch(function() {
+        window.hideBtnLoader(btn);
+        window.ajaxError('Something went wrong');
+      });
+    }
+  });
+</script>

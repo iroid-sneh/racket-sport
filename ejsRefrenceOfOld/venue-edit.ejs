@@ -1,0 +1,175 @@
+<style>
+  .autocomplete-wrapper { position: relative; }
+  .autocomplete-dropdown {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+    background: white; border: 1px solid #d1d5db; border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem; max-height: 200px; overflow-y: auto;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  }
+  .autocomplete-dropdown .ac-item {
+    padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem; color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .autocomplete-dropdown .ac-item:hover { background: #f3f4f6; }
+  .autocomplete-dropdown .ac-item:last-child { border-bottom: none; }
+  .autocomplete-dropdown .ac-loading { padding: 0.5rem 1rem; font-size: 0.75rem; color: #9ca3af; }
+</style>
+
+<!-- Back Button -->
+<div class="mb-6">
+  <a href="/admin/venues" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to Venues
+  </a>
+</div>
+
+<div class="rounded-xl shadow-md bg-white overflow-hidden">
+  <div class="p-6 border-b border-gray-200">
+    <h3 class="text-lg font-semibold text-gray-800">Edit Venue</h3>
+  </div>
+  <div class="p-6">
+    <form id="edit-form" autocomplete="off">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-red-500">*</span></label>
+          <input type="text" name="title" required autocomplete="off" placeholder="Enter venue title" value="<%= venue.title || '' %>"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Assign to Club Admin</label>
+          <select name="user_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+            <option value="">None (Admin owned)</option>
+            <% if (typeof clubAdmins !== 'undefined' && clubAdmins) { %>
+              <% clubAdmins.forEach(function(ca) { %>
+                <option value="<%= ca.id %>" <%= venue.user_id == ca.id ? 'selected' : '' %>><%= ca.name %></option>
+              <% }); %>
+            <% } %>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Address <span class="text-red-500">*</span></label>
+        <div class="autocomplete-wrapper">
+          <input type="text" name="address" id="edit-address" required autocomplete="off" placeholder="Start typing an address..." value="<%= venue.address || '' %>"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm" />
+          <div id="edit-dropdown" class="autocomplete-dropdown hidden"></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
+          <input type="text" name="lat" id="edit-lat" required readonly value="<%= venue.lat || '' %>"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500" placeholder="Auto-filled" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
+          <input type="text" name="lng" id="edit-lng" required readonly value="<%= venue.lng || '' %>"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500" placeholder="Auto-filled" />
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="flex gap-3 justify-end pt-4 border-t border-gray-200">
+        <a href="/admin/venues" class="px-6 py-2 border rounded-lg hover:bg-gray-100 text-sm font-medium">Cancel</a>
+        <button type="submit" id="edit-btn" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium">Update Venue</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // OpenStreetMap Nominatim Address Autocomplete
+  var acTimers = {};
+
+  function setupAutocomplete(inputId, dropdownId, latId, lngId) {
+    var input = document.getElementById(inputId);
+    var dropdown = document.getElementById(dropdownId);
+
+    input.addEventListener('input', function() {
+      var query = this.value.trim();
+      clearTimeout(acTimers[inputId]);
+
+      if (query.length < 3) {
+        dropdown.classList.add('hidden');
+        dropdown.innerHTML = '';
+        return;
+      }
+
+      acTimers[inputId] = setTimeout(function() {
+        dropdown.innerHTML = '<div class="ac-loading">Searching...</div>';
+        dropdown.classList.remove('hidden');
+
+        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=5&addressdetails=1', {
+          headers: { 'Accept-Language': 'en' }
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          dropdown.innerHTML = '';
+          if (!data || data.length === 0) {
+            dropdown.innerHTML = '<div class="ac-loading">No results found</div>';
+            return;
+          }
+          data.forEach(function(place) {
+            var item = document.createElement('div');
+            item.className = 'ac-item';
+            item.textContent = place.display_name;
+            item.addEventListener('click', function() {
+              input.value = place.display_name;
+              document.getElementById(latId).value = place.lat;
+              document.getElementById(lngId).value = place.lon;
+              dropdown.classList.add('hidden');
+              dropdown.innerHTML = '';
+            });
+            dropdown.appendChild(item);
+          });
+        })
+        .catch(function() {
+          dropdown.innerHTML = '<div class="ac-loading">Error fetching results</div>';
+        });
+      }, 300);
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+  }
+
+  setupAutocomplete('edit-address', 'edit-dropdown', 'edit-lat', 'edit-lng');
+
+  // Form submission
+  document.getElementById('edit-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('edit-btn');
+    var formData = new FormData(this);
+    var body = {};
+    formData.forEach(function(val, key) {
+      body[key] = val;
+    });
+
+    window.showBtnLoader(btn);
+    fetch('/admin/venues/<%= venue.id %>', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      window.hideBtnLoader(btn);
+      if (data.success) {
+        window.ajaxSuccess(data.message);
+        setTimeout(function() { window.location.href = '/admin/venues'; }, 1200);
+      } else {
+        window.ajaxError(data.message);
+      }
+    })
+    .catch(function() {
+      window.hideBtnLoader(btn);
+      window.ajaxError('Something went wrong');
+    });
+  });
+</script>

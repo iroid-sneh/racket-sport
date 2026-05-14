@@ -1,0 +1,497 @@
+<% var currentPage = 'membership-plans'; %>
+
+<style>
+  .mf-wrapper { display: flex; flex-direction: column; min-height: calc(100vh - 0px); }
+  .mf-title-section {
+    background: #FFFFFF; padding: 20px 32px; border-bottom: 1px solid #E7EBEF;
+    display: flex; align-items: flex-start; justify-content: space-between;
+  }
+  .mf-title-section h1 { font-size: 18px; font-weight: 700; color: #2B2D42; line-height: 1.4; }
+  .mf-title-section p { font-size: 13px; color: #8D99AE; margin-top: 2px; }
+  .mf-back-link {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #8D99AE;
+    text-decoration: none; margin-bottom: 4px;
+  }
+  .mf-back-link:hover { color: #2B2D42; }
+  .mf-save-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+    background: #2B2D42; border: none; border-radius: 8px;
+    font-size: 13px; font-weight: 500; color: #FFFFFF; cursor: pointer; white-space: nowrap;
+    box-shadow: 0px 1px 2px rgba(0,0,0,0.1);
+  }
+  .mf-save-btn:hover { background: #1a1b2e; }
+  .mf-save-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+  .mf-content { background: #F2F4F7; flex: 1; padding: 24px 32px; }
+
+  .mf-form-card {
+    background: #FFFFFF; border: 1px solid #E7EBEF; border-radius: 10px;
+    max-width: 840px; overflow: hidden;
+  }
+
+  .mf-card-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px 20px; border-bottom: 1px solid #F2F4F7;
+  }
+  .mf-name-input {
+    flex: 1; border: 1px solid #E7EBEF; border-radius: 6px; padding: 9px 12px;
+    font-size: 15px; font-weight: 500; color: #2B2D42; background: #FFFFFF; outline: none;
+    box-sizing: border-box;
+  }
+  .mf-name-input:focus { border-color: #6366F1; box-shadow: 0 0 0 2px rgba(99,102,241,0.1); }
+  .mf-name-input::placeholder { color: #94A3B8; font-weight: 400; }
+  .mf-hdr-btn {
+    width: 30px; height: 30px; flex-shrink: 0; border-radius: 6px; border: 1px solid #E7EBEF;
+    background: #FFFFFF; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s; text-decoration: none;
+  }
+  .mf-hdr-btn:hover { background: #F2F4F7; border-color: #D6DAE3; }
+  .mf-hdr-btn.danger:hover { background: #FEF2F2; border-color: #FECACA; }
+
+  .mf-section {
+    display: flex; align-items: flex-start; gap: 24px;
+    padding: 20px 24px; border-bottom: 1px solid #F2F4F7;
+  }
+  .mf-section:last-child { border-bottom: none; }
+  .mf-section-label { min-width: 200px; flex-shrink: 0; padding-top: 4px; }
+  .mf-section-label .mf-label { font-size: 13px; font-weight: 600; color: #2B2D42; display: block; margin-bottom: 2px; }
+  .mf-section-label .mf-sublabel { font-size: 12px; color: #8D99AE; line-height: 1.4; }
+  .mf-section-content { flex: 1; }
+
+  .mf-section-full { padding: 20px 24px; border-bottom: 1px solid #F2F4F7; }
+  .mf-section-full:last-child { border-bottom: none; }
+  .mf-section-full .mf-label { font-size: 13px; font-weight: 600; color: #2B2D42; display: block; margin-bottom: 2px; }
+  .mf-section-full .mf-sublabel { font-size: 12px; color: #8D99AE; line-height: 1.4; margin-bottom: 14px; display: block; }
+
+  .mf-input {
+    height: 36px; padding: 0 10px; border: 1px solid #E7EBEF; border-radius: 6px;
+    font-size: 13px; color: #2B2D42; background: #FFFFFF; outline: none; box-sizing: border-box;
+  }
+  .mf-input:focus { border-color: #6366F1; box-shadow: 0 0 0 2px rgba(99,102,241,0.1); }
+  .mf-textarea {
+    width: 100%; min-height: 80px; padding: 8px 10px; border: 1px solid #E7EBEF; border-radius: 6px;
+    font-size: 13px; color: #2B2D42; background: #FFFFFF; outline: none; box-sizing: border-box;
+    resize: vertical; font-family: inherit;
+  }
+  .mf-textarea:focus { border-color: #6366F1; box-shadow: 0 0 0 2px rgba(99,102,241,0.1); }
+  .mf-textarea::placeholder { color: #8D99AE; }
+  .mf-inline { display: flex; align-items: center; gap: 8px; }
+  .mf-suffix { font-size: 13px; color: #8D99AE; }
+  .mf-btn-group { display: inline-flex; border: 1px solid #E7EBEF; border-radius: 20px; overflow: hidden; }
+  .mf-btn-opt {
+    padding: 5px 14px; font-size: 13px; font-weight: 500; border: none; cursor: pointer;
+    background: #FFFFFF; color: #8D99AE; transition: all 0.15s;
+  }
+  .mf-btn-opt.active { background: #2B2D42; color: #FFFFFF; }
+  .mf-btn-opt:not(:last-child) { border-right: 1px solid #E7EBEF; }
+  .mf-venue-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mf-venue-chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px;
+    border: 1px solid #E7EBEF; border-radius: 6px; font-size: 13px; font-weight: 500;
+    color: #64748B; cursor: pointer; transition: all 0.15s; background: #FFFFFF;
+  }
+  .mf-venue-chip.active { background: #2B2D42; border-color: #2B2D42; color: #FFFFFF; }
+  .mf-venue-chip:hover:not(.active) { border-color: #C7D2FE; color: #4F46E5; }
+
+  .mf-discounts-list { display: flex; flex-direction: column; gap: 10px; }
+  .mf-discount-card {
+    background: #F8F9FB; border: 1px solid #E7EBEF; border-radius: 8px; padding: 16px;
+  }
+  .mf-discount-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .mf-discount-name {
+    flex: 1; border: 1px solid #E7EBEF; border-radius: 6px; padding: 8px 12px;
+    font-size: 13px; color: #2B2D42; background: #FFFFFF; outline: none;
+  }
+  .mf-discount-name:focus { border-color: #6366F1; }
+  .mf-discount-name::placeholder { color: #8D99AE; }
+  .mf-discount-del {
+    width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+  }
+  .mf-discount-del:hover { background: #FEF2F2; }
+  .mf-discount-row { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .mf-discount-row .mf-row-label { font-size: 13px; font-weight: 500; color: #475569; min-width: 80px; }
+  .mf-toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; cursor: pointer; display: inline-block; }
+  .mf-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .mf-toggle-slider {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: #d1d5db; border-radius: 11px; transition: 0.25s;
+  }
+  .mf-toggle-slider::before {
+    content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px;
+    background: white; border-radius: 50%; transition: 0.25s;
+  }
+  .mf-toggle input:checked + .mf-toggle-slider { background: #2B2D42; }
+  .mf-toggle input:checked + .mf-toggle-slider::before { transform: translateX(18px); }
+  .mf-applies-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .mf-applies-btn {
+    padding: 5px 14px; font-size: 13px; font-weight: 500; border: 1px solid #E7EBEF;
+    border-radius: 20px; cursor: pointer; background: #FFFFFF; color: #8D99AE; transition: all 0.15s;
+  }
+  .mf-applies-btn.active { background: #2B2D42; color: #FFFFFF; border-color: #2B2D42; }
+  .mf-applies-btn:hover:not(.active) { border-color: #C7D2FE; }
+  .mf-add-cond-btn {
+    display: inline-flex; align-items: center; gap: 7px; padding: 0;
+    background: transparent; border: none;
+    font-size: 13px; font-weight: 500; color: #6366F1; cursor: pointer; margin-top: 4px;
+  }
+  .mf-add-cond-btn:hover { color: #4F46E5; }
+</style>
+
+<div class="mf-wrapper">
+  <div class="mf-title-section">
+    <div>
+      <a href="<%= basePath %>" class="mf-back-link">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Back
+      </a>
+      <h1>Membership</h1>
+      <p>Membership tiers apply across all locations.</p>
+    </div>
+    <button type="button" class="mf-save-btn" id="mf-save-btn" onclick="mfSave()">Save Changes</button>
+  </div>
+
+  <div class="mf-content">
+    <div class="mf-form-card">
+
+      <!-- Name row -->
+      <div class="mf-card-header">
+        <input type="text" class="mf-name-input" id="mf-name" value="<%= plan.name %>" placeholder="Membership name..." />
+        <button type="button" class="mf-hdr-btn danger" onclick="mfDeletePlan()" title="Delete plan">
+          <svg width="13" height="13" fill="none" stroke="#EF4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+      </div>
+
+      <!-- Duration -->
+      <div class="mf-section">
+        <div class="mf-section-label">
+          <span class="mf-label">Duration</span>
+          <span class="mf-sublabel">Set a fixed length or an end date</span>
+        </div>
+        <div class="mf-section-content">
+          <div style="margin-bottom:10px;">
+            <div class="mf-btn-group" id="mf-duration-type">
+              <button type="button" class="mf-btn-opt <%= plan.duration_type === 'fixed_length' ? 'active' : '' %>" data-value="fixed_length" onclick="mfSetDurationType(this)">Fixed length</button>
+              <button type="button" class="mf-btn-opt <%= plan.duration_type === 'end_date' ? 'active' : '' %>" data-value="end_date" onclick="mfSetDurationType(this)">End date</button>
+            </div>
+          </div>
+          <div class="mf-inline" id="mf-dur-fixed" style="<%= plan.duration_type === 'end_date' ? 'display:none' : '' %>">
+            <input type="number" class="mf-input" id="mf-duration-months" value="<%= plan.duration_months %>" style="width:80px;" min="1" />
+            <span class="mf-suffix">months</span>
+          </div>
+          <div id="mf-dur-enddate" style="<%= plan.duration_type === 'fixed_length' ? 'display:none' : '' %>">
+            <input type="date" class="mf-input" id="mf-end-date" value="<%= plan.end_date ? new Date(plan.end_date).toISOString().split('T')[0] : '' %>" style="width:180px;" />
+          </div>
+          <script>document.getElementById('mf-end-date').min = new Date().toISOString().split('T')[0];</script>
+        </div>
+      </div>
+
+      <!-- Membership type -->
+      <div class="mf-section">
+        <div class="mf-section-label">
+          <span class="mf-label">Membership type</span>
+        </div>
+        <div class="mf-section-content">
+          <select class="mf-input" id="mf-membership-type" style="width:160px;cursor:pointer;">
+            <option value="1" <%= plan.membership_type == 1 ? 'selected' : '' %>>Basic</option>
+            <option value="2" <%= plan.membership_type == 2 ? 'selected' : '' %>>Premium</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Price -->
+      <div class="mf-section">
+        <div class="mf-section-label">
+          <span class="mf-label">Price</span>
+        </div>
+        <div class="mf-section-content">
+          <div style="position:relative;width:160px;">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:#94A3B8;">&pound;</span>
+            <input type="number" class="mf-input" id="mf-price" value="<%= plan.price %>" style="width:160px;padding-left:22px;" step="0.01" min="0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Available at -->
+      <div class="mf-section">
+        <div class="mf-section-label">
+          <span class="mf-label">Available at</span>
+          <span class="mf-sublabel">Which locations offer this membership</span>
+        </div>
+        <div class="mf-section-content">
+          <div class="mf-venue-chips" id="mf-venues">
+            <% if (typeof allVenues !== 'undefined') { allVenues.forEach(function(v) { %>
+              <% var isActive = plan.venue_ids && plan.venue_ids.indexOf(v.id) !== -1; %>
+              <button type="button" class="mf-venue-chip <%= isActive ? 'active' : '' %>" data-venue-id="<%= v.id %>" onclick="this.classList.toggle('active')"><%= v.title %></button>
+            <% }); } %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Benefits -->
+      <div class="mf-section">
+        <div class="mf-section-label">
+          <span class="mf-label">Benefits</span>
+          <span class="mf-sublabel">Describe what is included</span>
+        </div>
+        <div class="mf-section-content">
+          <textarea class="mf-textarea" id="mf-benefits" placeholder="e.g. Unlimited court access, priority booking..."><%= plan.benefits || '' %></textarea>
+        </div>
+      </div>
+
+      <!-- Advance booking bonus -->
+      <div class="mf-section">
+        <div class="mf-section-label">
+          <span class="mf-label">Advance booking bonus</span>
+          <span class="mf-sublabel">Extra days members can book ahead</span>
+        </div>
+        <div class="mf-section-content">
+          <div class="mf-inline">
+            <input type="number" class="mf-input" id="mf-advance-days" value="<%= plan.advance_booking_days %>" style="width:80px;" min="0" />
+            <span class="mf-suffix">extra days</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Discount conditions -->
+      <div class="mf-section-full">
+        <span class="mf-label">Discount conditions</span>
+        <span class="mf-sublabel">Add one or more discounts that apply across bookings, private lessons, or activities.</span>
+        <div class="mf-discounts-list" id="mf-discounts-list">
+          <% var discounts = plan.discounts || []; %>
+          <% discounts.forEach(function(disc) { %>
+            <div class="mf-discount-card">
+              <div class="mf-discount-header">
+                <input type="text" class="mf-discount-name" data-field="condition_name" value="<%= disc.condition_name || '' %>" placeholder="Condition name (e.g. 20% off court bookings)" />
+                <button type="button" class="mf-discount-del" onclick="mfRemoveDiscount(this)">
+                  <svg width="14" height="14" fill="none" stroke="#EF4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+              <div class="mf-discount-row">
+                <span class="mf-row-label">Discount</span>
+                <div class="mf-btn-group" data-field="discount_type">
+                  <button type="button" class="mf-btn-opt <%= (!disc.discount_type || disc.discount_type === 'percentage') ? 'active' : '' %>" data-value="percentage" onclick="mfSetDiscountType(this)">%</button>
+                  <button type="button" class="mf-btn-opt <%= disc.discount_type === 'fixed' ? 'active' : '' %>" data-value="fixed" onclick="mfSetDiscountType(this)">&pound; off</button>
+                </div>
+                <div class="mf-inline">
+                  <span class="mf-discount-type-label"><%= (!disc.discount_type || disc.discount_type === 'percentage') ? '%' : '£' %></span>
+                  <input type="number" class="mf-input" data-field="discount_value" value="<%= disc.discount_value || 0 %>" style="width:80px;" step="0.01" min="0" />
+                </div>
+              </div>
+              <div class="mf-discount-row">
+                <span class="mf-row-label">Applies to</span>
+                <div class="mf-applies-group" data-field="applies_to">
+                  <% var appliesTo = disc.applies_to || []; %>
+                  <button type="button" class="mf-applies-btn <%= appliesTo.indexOf('bookings') !== -1 ? 'active' : '' %>" data-value="bookings" onclick="mfToggleApplies(this)">Bookings</button>
+                  <button type="button" class="mf-applies-btn <%= appliesTo.indexOf('private_lessons') !== -1 ? 'active' : '' %>" data-value="private_lessons" onclick="mfToggleApplies(this)">Private lessons</button>
+                  <button type="button" class="mf-applies-btn <%= appliesTo.indexOf('activities') !== -1 ? 'active' : '' %>" data-value="activities" onclick="mfToggleApplies(this)">Activities</button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span class="mf-row-label">Full court</span>
+                <label class="mf-toggle">
+                  <input type="checkbox" data-field="full_court_discount" <%= disc.full_court_discount ? 'checked' : '' %> />
+                  <span class="mf-toggle-slider"></span>
+                </label>
+                <span style="font-size:12px;color:#8D99AE;">Discount applies to the member's share only</span>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+        <button type="button" class="mf-add-cond-btn" onclick="mfAddDiscount()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add discount condition
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function mfSetDurationType(btn) {
+    btn.parentElement.querySelectorAll('.mf-btn-opt').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    var val = btn.getAttribute('data-value');
+    document.getElementById('mf-dur-fixed').style.display = val === 'fixed_length' ? '' : 'none';
+    document.getElementById('mf-dur-enddate').style.display = val === 'end_date' ? '' : 'none';
+  }
+
+  function mfSetDiscountType(btn) {
+    var group = btn.closest('.mf-btn-group');
+    group.querySelectorAll('.mf-btn-opt').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    var label = btn.closest('.mf-discount-card').querySelector('.mf-discount-type-label');
+    if (label) label.textContent = btn.getAttribute('data-value') === 'percentage' ? '%' : '£';
+  }
+
+  function mfToggleApplies(btn) { btn.classList.toggle('active'); }
+
+  function mfRemoveDiscount(btn) {
+    var card = btn.closest('.mf-discount-card');
+    card.style.transition = 'opacity 0.2s';
+    card.style.opacity = '0';
+    setTimeout(function() { card.remove(); }, 200);
+  }
+
+  function mfAddDiscount() {
+    var list = document.getElementById('mf-discounts-list');
+    var html = '<div class="mf-discount-card">'
+      + '<div class="mf-discount-header"><input type="text" class="mf-discount-name" data-field="condition_name" value="" placeholder="Condition name (e.g. 20% off court bookings)" />'
+      + '<button type="button" class="mf-discount-del" onclick="mfRemoveDiscount(this)"><svg width="14" height="14" fill="none" stroke="#EF4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div>'
+      + '<div class="mf-discount-row"><span class="mf-row-label">Discount</span>'
+      + '<div class="mf-btn-group" data-field="discount_type"><button type="button" class="mf-btn-opt active" data-value="percentage" onclick="mfSetDiscountType(this)">%</button><button type="button" class="mf-btn-opt" data-value="fixed" onclick="mfSetDiscountType(this)">&pound; off</button></div>'
+      + '<div class="mf-inline"><span class="mf-discount-type-label">%</span><input type="number" class="mf-input" data-field="discount_value" value="0" style="width:80px;" step="0.01" min="0" /></div></div>'
+      + '<div class="mf-discount-row"><span class="mf-row-label">Applies to</span>'
+      + '<div class="mf-applies-group" data-field="applies_to">'
+      + '<button type="button" class="mf-applies-btn" data-value="bookings" onclick="mfToggleApplies(this)">Bookings</button>'
+      + '<button type="button" class="mf-applies-btn" data-value="private_lessons" onclick="mfToggleApplies(this)">Private lessons</button>'
+      + '<button type="button" class="mf-applies-btn" data-value="activities" onclick="mfToggleApplies(this)">Activities</button></div></div>'
+      + '<div style="display:flex;align-items:center;gap:10px;"><span class="mf-row-label">Full court</span>'
+      + '<label class="mf-toggle"><input type="checkbox" data-field="full_court_discount" /><span class="mf-toggle-slider"></span></label>'
+      + '<span style="font-size:12px;color:#8D99AE;">Discount applies to the member\'s share only</span></div></div>';
+    list.insertAdjacentHTML('beforeend', html);
+    list.lastElementChild.querySelector('[data-field="condition_name"]').focus();
+  }
+
+  function mfCollectDiscounts() {
+    var discounts = [];
+    document.querySelectorAll('#mf-discounts-list .mf-discount-card').forEach(function(dc) {
+      var d = {};
+      d.condition_name = dc.querySelector('[data-field="condition_name"]').value.trim();
+      var dtActive = dc.querySelector('[data-field="discount_type"] .mf-btn-opt.active');
+      d.discount_type = dtActive ? dtActive.getAttribute('data-value') : 'percentage';
+      d.discount_value = parseFloat(dc.querySelector('[data-field="discount_value"]').value) || 0;
+      var appliesTo = [];
+      dc.querySelectorAll('[data-field="applies_to"] .mf-applies-btn.active').forEach(function(b) { appliesTo.push(b.getAttribute('data-value')); });
+      d.applies_to = appliesTo;
+      var fcCb = dc.querySelector('[data-field="full_court_discount"]');
+      d.full_court_discount = fcCb ? fcCb.checked : false;
+      discounts.push(d);
+    });
+    return discounts;
+  }
+
+  function mfDeletePlan() {
+    Swal.fire(Object.assign({}, window.swalTheme, {
+      icon: 'warning',
+      title: 'Delete Plan?',
+      text: 'This membership plan will be permanently deleted.',
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      confirmButtonColor: '#DC2626'
+    })).then(function(result) {
+      if (!result.isConfirmed) return;
+      fetch('/admin/membership-plans/<%= plan.id %>/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          window.adminToast('Plan deleted', 'success');
+          setTimeout(function() { window.location.href = '<%= basePath %>'; }, 900);
+        } else {
+          window.adminToast(data.message || 'Failed to delete', 'error');
+        }
+      })
+      .catch(function() { window.adminToast('Something went wrong', 'error'); });
+    });
+  }
+
+  function mfSave() {
+    var saveBtn = document.getElementById('mf-save-btn');
+    var name = document.getElementById('mf-name').value.trim();
+    if (!name) {
+      document.getElementById('mf-name').style.borderColor = '#EF4444';
+      document.getElementById('mf-name').focus();
+      window.adminToast('Please enter a membership name', 'error');
+      return;
+    }
+    var dtActive = document.querySelector('#mf-duration-type .mf-btn-opt.active');
+    var durationType = dtActive ? dtActive.getAttribute('data-value') : 'fixed_length';
+    var durMonths = parseInt(document.getElementById('mf-duration-months').value);
+    if (durationType === 'fixed_length' && (isNaN(durMonths) || durMonths < 1)) {
+      document.getElementById('mf-duration-months').style.borderColor = '#EF4444';
+      document.getElementById('mf-duration-months').focus();
+      window.adminToast('Duration must be at least 1 month', 'error');
+      return;
+    }
+    var endDateVal = document.getElementById('mf-end-date').value;
+    if (durationType === 'end_date') {
+      if (!endDateVal) {
+        document.getElementById('mf-end-date').style.borderColor = '#EF4444';
+        window.adminToast('Please select an end date', 'error');
+        return;
+      }
+      if (new Date(endDateVal) < new Date(new Date().toDateString())) {
+        document.getElementById('mf-end-date').style.borderColor = '#EF4444';
+        window.adminToast('End date cannot be in the past', 'error');
+        return;
+      }
+    }
+    var advDays = parseInt(document.getElementById('mf-advance-days').value) || 0;
+    if (advDays < 0) {
+      document.getElementById('mf-advance-days').style.borderColor = '#EF4444';
+      document.getElementById('mf-advance-days').focus();
+      window.adminToast('Advance booking days cannot be negative', 'error');
+      return;
+    }
+    var venueIds = [];
+    document.querySelectorAll('#mf-venues .mf-venue-chip.active').forEach(function(chip) {
+      venueIds.push(parseInt(chip.getAttribute('data-venue-id')));
+    });
+    var priceVal = parseFloat(document.getElementById('mf-price').value);
+    if (!priceVal || priceVal <= 0) {
+      document.getElementById('mf-price').style.borderColor = '#EF4444';
+      document.getElementById('mf-price').focus();
+      window.adminToast('Please enter a valid price', 'error');
+      return;
+    }
+    var discounts = mfCollectDiscounts();
+    for (var i = 0; i < discounts.length; i++) {
+      if (discounts[i].discount_value < 0) {
+        window.adminToast('Discount values cannot be negative', 'error');
+        return;
+      }
+    }
+    var data = {
+      name: name,
+      membership_type: parseInt(document.getElementById('mf-membership-type').value) || 1,
+      duration_type: durationType,
+      duration_months: durMonths || 1,
+      end_date: endDateVal || null,
+      price: priceVal,
+      benefits: document.getElementById('mf-benefits').value.trim(),
+      advance_booking_days: advDays,
+      venue_ids: venueIds,
+      discounts: discounts
+    };
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    fetch('<%= basePath %>/<%= plan.id %>', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(function(r) {
+      if (!r.ok) return r.text().then(function(t) { try { return JSON.parse(t); } catch(e) { return { success: false, message: 'Server error (' + r.status + ')' }; } });
+      return r.json();
+    })
+    .then(function(resp) {
+      if (resp.success) {
+        window.adminToast(resp.message || 'Saved', 'success');
+        setTimeout(function() { window.location.href = '<%= basePath %>'; }, 1200);
+      } else {
+        window.adminToast(resp.message || 'Failed to save', 'error');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+      }
+    })
+    .catch(function(err) {
+      window.adminToast(err.message || 'Something went wrong', 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Changes';
+    });
+  }
+</script>

@@ -1,0 +1,1627 @@
+<% var currentPage = 'settings-services'; %>
+<% var canManageLocations = adminUser && adminUser.role === 2; %>
+<% var settingsHomeHref = canManageLocations ? '/admin/settings' : '/admin/settings/staff'; %>
+<% var sportList = (typeof venueSportTypes !== 'undefined' && venueSportTypes.length) ? venueSportTypes : []; %>
+<% var courtList = (typeof courts !== 'undefined' && courts.length) ? courts : []; %>
+<%
+  var selectedVenueName = '';
+  if (typeof venues !== 'undefined' && venues.length && typeof selectedVenueId !== 'undefined' && selectedVenueId) {
+    var _sv = venues.find(function(v){ return v.id == selectedVenueId; });
+    if (_sv) selectedVenueName = _sv.title;
+  }
+  var activeSportName = sportList.length ? sportList[0].name : '';
+%>
+
+<style>
+  /* ── Sidebar ── */
+  .svc-sidebar { width: 220px; background: #F8F9FB; padding: 16px 0; flex-shrink: 0; border-right: 1px solid #E7EBEF; }
+  .svc-sidebar-title { padding: 12px 16px; border-bottom: 1px solid #E7EBEF; margin-bottom: 8px; }
+  .svc-sidebar-title h2 { font-size: 14px; font-weight: 600; color: #0A0A0A; margin: 0; }
+  .svc-sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 10px; }
+  .svc-sidebar-nav a {
+    display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+    border-radius: 8px; font-size: 13px; font-weight: 400; color: #64748B;
+    text-decoration: none; transition: background 0.15s;
+  }
+  .svc-sidebar-nav a:hover { background: rgba(100,116,139,0.08); color: #2B2D42; }
+  .svc-sidebar-nav a.active { background: #EEF2FF; color: #4F46E5; font-weight: 500; }
+  .svc-sidebar-nav a svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* ── Top bar ── */
+  .svc-topbar { background: #FFFFFF; display: flex; align-items: center; justify-content: space-between; padding: 11px 24px; border-bottom: 1px solid #E7EBEF; }
+  .svc-breadcrumb { display: flex; align-items: center; gap: 6px; }
+  .svc-breadcrumb a { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 400; color: #8D99AE; text-decoration: none; }
+  .svc-breadcrumb a:hover { color: #2B2D42; }
+  .svc-breadcrumb .bc-sep { font-size: 12px; color: #CBD5E1; }
+  .svc-breadcrumb .bc-item { font-size: 12px; color: #8D99AE; font-weight: 400; }
+  .svc-breadcrumb .bc-current { font-size: 12px; color: #2B2D42; font-weight: 600; }
+
+  /* ── Title bar ── */
+  .svc-titlebar { background: #FFFFFF; display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid #E7EBEF; }
+  .svc-titlebar h1 { font-size: 16px; font-weight: 700; color: #0F172A; margin: 0; }
+  .svc-titlebar p { font-size: 12px; color: #94A3B8; margin: 3px 0 0; }
+  .svc-save-btn {
+    height: 34px; padding: 0 16px; background: #1E293B; border: none; border-radius: 6px;
+    font-size: 13px; font-weight: 500; color: #FFFFFF; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .svc-save-btn:hover { background: #0F172A; }
+
+  /* ── Sport tabs — true segmented control ── */
+  .svc-sport-tabs {  padding: 12px 24px; }
+  .svc-sport-tabs-ctl {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: #e3eaf0; border-radius: 8px; padding: 3px;
+  }
+  .svc-sport-tab {
+    padding: 5px 20px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    color: #8896A8; background: transparent; border: none;
+    cursor: pointer; transition: all 0.15s; line-height: 20px;
+  }
+  .svc-sport-tab:hover:not(.active) { color: #475569; }
+  .svc-sport-tab.active {
+    background: #FFFFFF; color: #1E293B; font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  /* ── Sub-tabs — dark underline (matches screenshot) ── */
+  .svc-subtabs {  display: flex;  padding: 0 24px; }
+  .svc-subtab {
+    padding: 10px 16px; font-size: 13px; font-weight: 500; color: #94A3B8;
+    border: none; border-bottom: 2px solid transparent; background: none; cursor: pointer; transition: all 0.15s;
+  }
+  .svc-subtab:hover { color: #1E293B; }
+  .svc-subtab.active { color: #1E293B; font-weight: 600; border-bottom-color: #1E293B; }
+
+  /* ── Content area ── */
+  .svc-body { background: #F1F5F9; flex: 1; overflow-y: auto; }
+  .svc-body-inner { padding: 20px 24px 32px; max-width: 680px; }
+
+  /* ── Description text ── */
+  .svc-desc-text { font-size: 12px; color: #6366F1; line-height: 18px; margin: 0 0 14px; }
+
+  /* ── Main card (60 minutes) ── */
+  .svc-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+
+  /* Card header */
+  .svc-card-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px; cursor: pointer; user-select: none;
+  }
+  .svc-card-hdr:hover { background: #FAFAFA; }
+  .svc-card-hdr-left { display: flex; align-items: center; gap: 10px; }
+  .svc-dur-icon {
+    width: 30px; height: 30px; border-radius: 8px; background: #EEF2FF;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .svc-dur-icon svg { width: 15px; height: 15px; stroke: #6366F1; }
+  .svc-card-title { font-size: 13px; font-weight: 600; color: #1E293B; }
+  .svc-card-hdr-right { display: flex; align-items: center; gap: 2px; }
+  .svc-hdr-btn {
+    width: 28px; height: 28px; border: none; background: transparent; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  }
+  .svc-hdr-btn:hover { background: #F1F5F9; }
+  .svc-hdr-btn.del:hover { background: #FEF2F2; }
+  .svc-hdr-btn svg { width: 14px; height: 14px; }
+  .svc-chevron-icon { transition: transform 0.2s; }
+  .svc-chevron-icon.collapsed { transform: rotate(180deg); }
+
+  /* Card body */
+  .svc-card-body { border-top: 1px solid #E2E8F0; }
+  .svc-expandable.svc-collapsed { display: none !important; }
+
+  /* ── Form sections inside card ── */
+  .svc-section {
+    display: flex; align-items: flex-start; gap: 0;
+    padding: 14px 16px; border-bottom: 1px solid #F1F5F9;
+  }
+  .svc-section:last-child { border-bottom: none; }
+  .svc-section-label { flex: 0 0 200px; padding-right: 16px; }
+  .svc-section-label strong { font-size: 13px; font-weight: 600; color: #1E293B; display: block; margin-bottom: 2px; }
+  .svc-section-label span { font-size: 11px; color: #94A3B8; line-height: 15px; }
+  .svc-section-val { flex: 1; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+
+  /* Duration input inline */
+  .svc-dur-inline { display: flex; align-items: center; gap: 8px; padding-top: 6px; }
+
+  /* ── Inputs ── */
+  .svc-input {
+    height: 34px; padding: 0 10px; border: 1px solid #E2E8F0; border-radius: 6px;
+    font-size: 13px; color: #1E293B; background: #FFFFFF; outline: none; box-sizing: border-box;
+  }
+  .svc-input:focus { border-color: #6366F1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+  .svc-input-dur { width: 80px; }
+
+  /* ── Toggle ── */
+  .svc-toggle-wrap { display: flex; align-items: center; gap: 10px; padding-top: 6px; }
+  .svc-toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+  .svc-toggle input { opacity: 0; width: 0; height: 0; }
+  .svc-toggle-track { position: absolute; inset: 0; background: #CBD5E1; border-radius: 10px; transition: 0.2s; cursor: pointer; }
+  .svc-toggle-track:before { content: ""; position: absolute; width: 16px; height: 16px; left: 2px; bottom: 2px; background: #fff; border-radius: 50%; transition: 0.2s; }
+  .svc-toggle input:checked + .svc-toggle-track { background: #6366F1; }
+  .svc-toggle input:checked + .svc-toggle-track:before { transform: translateX(16px); }
+  .svc-toggle-label { font-size: 13px; color: #94A3B8; font-weight: 400; }
+
+  /* ── Court price rows ── */
+  .svc-court-prices { display: flex; flex-direction: column; gap: 8px; }
+  .svc-court-row { display: flex; align-items: center; gap: 10px; }
+  .svc-court-row-label { font-size: 13px; color: #1E293B; min-width: 60px; }
+  .svc-price-field { position: relative; display: inline-flex; align-items: center; }
+  .svc-price-pfx { position: absolute; left: 10px; font-size: 13px; color: #94A3B8; pointer-events: none; z-index: 1; }
+  .svc-price-in { padding-left: 22px !important; width: 130px; }
+
+  /* ── Pricing conditions sub-section ── */
+  .svc-cond-section { padding: 14px 16px; border-top: 1px solid #F1F5F9; }
+  .svc-cond-section-hdr { margin-bottom: 10px; }
+  .svc-cond-section-hdr strong { font-size: 13px; font-weight: 600; color: #1E293B; display: block; margin-bottom: 3px; }
+  .svc-cond-section-hdr span { font-size: 11px; color: #94A3B8; line-height: 15px; }
+
+  /* ── Condition card ── */
+  .svc-cond-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+  .svc-cond-hdr {
+    display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+    border-bottom: 1px solid #E2E8F0; cursor: pointer;
+  }
+  .svc-cond-name {
+    flex: 1; height: 26px; border: none; background: transparent; outline: none;
+    font-size: 13px; font-weight: 400; color: #1E293B;
+  }
+  .svc-cond-name::placeholder { color: #94A3B8; }
+  .svc-cond-hdr-btns { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+  .svc-cond-btn {
+    width: 26px; height: 26px; border: none; background: transparent; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  }
+  .svc-cond-btn:hover { background: #F1F5F9; }
+  .svc-cond-btn.del:hover { background: #FEF2F2; }
+  .svc-cond-btn svg { width: 13px; height: 13px; }
+  .svc-cond-chevron { transition: transform 0.2s; }
+  .svc-cond-chevron.open { transform: rotate(0deg); }
+  .svc-cond-chevron.closed { transform: rotate(180deg); }
+
+  /* Condition body */
+  .svc-cond-body { }
+  .svc-cond-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 14px; border-bottom: 1px solid #F8FAFC;
+  }
+  .svc-cond-row:last-child { border-bottom: none; }
+  .svc-cond-lbl { flex: 0 0 80px; font-size: 13px; color: #64748B; font-weight: 400; line-height: 34px; }
+  .svc-cond-fld { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 34px; }
+  .svc-cond-fld-col { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+
+  /* Court select + badges */
+  .svc-court-sel {
+    height: 34px; padding: 0 10px; border: 1px solid #E2E8F0; border-radius: 6px;
+    font-size: 13px; color: #1E293B; background: #FFFFFF; outline: none; cursor: pointer; appearance: auto;
+  }
+  .svc-court-sel:focus { border-color: #6366F1; }
+  .svc-badges-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .svc-court-badge {
+    display: inline-flex; align-items: center; padding: 4px 12px;
+    background: #1E293B; color: #FFFFFF; border-radius: 5px;
+    font-size: 12px; font-weight: 500; cursor: pointer; transition: background 0.15s;
+  }
+  .svc-court-badge:hover { background: #334155; }
+
+  /* Time row */
+  .svc-time-in { width: 140px; }
+  .svc-to { font-size: 12px; color: #94A3B8; }
+
+  /* Applies-to buttons */
+  .svc-applies { display: flex; border: 1px solid #E2E8F0; border-radius: 6px; overflow: hidden; }
+  .svc-apply-btn {
+    padding: 5px 14px; font-size: 12px; font-weight: 500; color: #94A3B8;
+    background: transparent; border: none; cursor: pointer; transition: all 0.15s; line-height: 18px;
+  }
+  .svc-apply-btn.active { background: #1E293B; color: #FFFFFF; }
+  .svc-apply-btn:not(.active):hover { background: #F8FAFC; color: #475569; }
+
+  /* Day buttons */
+  .svc-days { display: flex; flex-wrap: wrap; gap: 6px; }
+  .svc-day {
+    padding: 4px 10px; border: 1px solid #E2E8F0; border-radius: 5px;
+    font-size: 12px; font-weight: 500; color: #94A3B8; background: #FFFFFF;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .svc-day.on { background: #1E293B; color: #FFFFFF; border-color: #1E293B; }
+  .svc-day:hover:not(.on) { background: #F8FAFC; color: #475569; }
+
+  /* Add pricing condition link */
+  .svc-add-cond {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 12px 0 2px; font-size: 13px; font-weight: 500; color: #6366F1;
+    background: none; border: none; cursor: pointer; width: 100%;
+  }
+  .svc-add-cond:hover { color: #4F46E5; }
+  .svc-add-cond svg { width: 13px; height: 13px; }
+
+  /* Add duration */
+  .svc-add-dur {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%; padding: 12px; font-size: 13px; font-weight: 500; color: #6366F1;
+    background: #FFFFFF; border: 1px dashed #CBD5E1; border-radius: 8px; cursor: pointer; transition: all 0.15s;
+  }
+  .svc-add-dur:hover { background: #EEF2FF; border-color: #6366F1; }
+  .svc-add-dur svg { width: 13px; height: 13px; }
+
+  /* Empty state */
+  .svc-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 60px 24px; }
+  .svc-empty p { font-size: 14px; color: #94A3B8; text-align: center; margin: 0; }
+
+  .svc-hidden { display: none !important; }
+
+  /* Duration select dropdown inside booking card */
+  .svc-dur-select { width: 100px; cursor: pointer; }
+  .svc-dur-select:focus { border-color: #6366F1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+  /* === Venue banner inside Activities pane === */
+  .svc-venue-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    margin: 0 0 12px;
+    background: #EEF2FF;
+    border: 1px solid #C7D2FE;
+    color: #3730A3;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 16px;
+  }
+  .svc-venue-banner strong {
+    font-weight: 600;
+    color: #1E1B4B;
+  }
+  .svc-venue-banner svg { color: #4F46E5; flex-shrink: 0; }
+
+  /* Add Activity full-width button (one per sport pane) — figma-matched */
+  .svc-add-btn-full {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 12px;
+    padding: 14px 16px;
+    background: #FFFFFF;
+    border: 1px dashed #CBD5E1;
+    color: #4F46E5;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .svc-add-btn-full:hover { background: #F5F7FF; border-color: #6366F1; color: #4338CA; }
+  .svc-add-btn-full svg { width: 16px; height: 16px; }
+  .svc-add-btn-full:disabled,
+  .svc-add-btn-full--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .svc-activities-list .svc-card + .svc-card { margin-top: 10px; }
+
+  /* === Activity card (figma-matching) === */
+  .svc-activity-card .svc-card-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+  }
+  .svc-activity-card .svc-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.005em;
+  }
+  .svc-card-header-actions {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .svc-arrow {
+    display: inline-flex;
+    width: 20px; height: 20px;
+    align-items: center; justify-content: center;
+    transition: transform 0.18s ease;
+    color: #6B7280;
+  }
+  .svc-arrow.open { transform: rotate(180deg); }
+  .svc-trash-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: #9CA3AF;
+    display: inline-flex;
+    border-radius: 4px;
+  }
+  .svc-trash-btn:hover { color: #DC2626; background: #FEF2F2; }
+
+  .svc-activity-card .svc-card-body { padding: 0 18px 18px; }
+  .svc-activity-card .svc-card-body.svc-expandable { border-top: 1px solid #E7EBEF; }
+
+  /* Field row: label on left, control on right, separated by hairline */
+  .svc-fld {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #F1F2F4;
+  }
+  .svc-fld:last-of-type { border-bottom: none; }
+  .svc-fld-label strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 18px;
+  }
+  .svc-fld-label .svc-caption {
+    display: block;
+    font-size: 12px;
+    color: #6B7280;
+    margin-top: 2px;
+    line-height: 16px;
+  }
+  .svc-fld-control { min-width: 0; }
+  .svc-fld-control-end { display: flex; justify-content: flex-end; }
+  .svc-fld-toggle { padding: 18px 0; }
+
+  .svc-fld-select {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .svc-cap-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .svc-num-sm { width: 84px !important; text-align: center; }
+  .svc-mute { font-size: 13px; color: #6B7280; }
+
+  .svc-price-input {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 100%;
+  }
+  .svc-price-prefix {
+    position: absolute;
+    left: 12px;
+    font-size: 13px;
+    color: #6B7280;
+    pointer-events: none;
+  }
+  .svc-price-input-field {
+    padding-left: 26px !important;
+    width: 100%;
+  }
+
+  /* === Dual-thumb level slider === */
+  .dual-slider {
+    position: relative;
+    height: 24px;
+    margin: 8px 0 0;
+  }
+  .dual-slider-rail {
+    position: absolute;
+    top: 10px; left: 0; right: 0;
+    height: 4px;
+    background: #E5E7EB;
+    border-radius: 2px;
+  }
+  .dual-slider-fill {
+    position: absolute;
+    top: 10px;
+    height: 4px;
+    background: #2B2D42;
+    border-radius: 2px;
+  }
+  .dual-slider input[type="range"] {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 24px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    pointer-events: none;
+    margin: 0;
+  }
+  .dual-slider input[type="range"]:focus { outline: none; }
+  .dual-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #2B2D42;
+    border: 3px solid #FFFFFF;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+    margin-top: -7px;
+  }
+  .dual-slider input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #2B2D42;
+    border: 3px solid #FFFFFF;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  }
+  .dual-slider input[type="range"]::-webkit-slider-runnable-track {
+    background: transparent; border: none; height: 4px;
+  }
+  .dual-slider input[type="range"]::-moz-range-track {
+    background: transparent; border: none; height: 4px;
+  }
+
+  .dual-slider-ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding: 0 2px;
+  }
+  .dual-slider-ticks > span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 70px;
+    text-align: center;
+  }
+  .dual-slider-ticks > span > strong {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+  }
+  .dual-slider-ticks > span > span {
+    font-size: 11px;
+    color: #6B7280;
+    margin-top: 2px;
+  }
+
+  .svc-level-slider-wrap {
+    padding: 6px 0 4px;
+  }
+
+  .svc-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #F1F2F4;
+  }
+
+  /* Delete condition button */
+  .svc-condition-delete {
+    width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .svc-condition-delete:hover { background: #FEF2F2; }
+  .svc-condition-delete svg { width: 14px; height: 14px; }
+</style>
+
+<div style="display:flex; height:100vh; overflow:hidden;">
+
+  <%- include('partials/settings-sidebar', { active: 'services' }) %>
+
+  <!-- Main Column -->
+  <div style="flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden;">
+
+    <!-- Top Bar: breadcrumb + venue selector -->
+    <div class="svc-topbar">
+      <div class="svc-breadcrumb">
+        <a href="<%= settingsHomeHref %>">
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 19l-7-7 7-7"/></svg>
+          Settings
+        </a>
+        <span class="bc-sep">/</span>
+        <span class="bc-item">Services</span>
+        <% if (selectedVenueName) { %>
+          <span class="bc-sep">/</span>
+          <span class="bc-current"><%= selectedVenueName %></span>
+        <% } %>
+      </div>
+      <% if (canManageLocations) { %>
+        <div class="venue-select-wrap">
+          <svg class="venue-pin-icon" fill="none" stroke="#8D99AE" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <select class="venue-location-select">
+            <% if (typeof venues !== 'undefined' && venues.length) { %>
+              <% venues.forEach(function(v) { %>
+                <option value="<%= v.id %>" <%= (typeof selectedVenueId !== 'undefined' && selectedVenueId == v.id) ? 'selected' : '' %>><%= v.title %></option>
+              <% }); %>
+            <% } %>
+          </select>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Title bar -->
+    <div class="svc-titlebar">
+      <div>
+        <h1>Services</h1>
+        <p>Configure booking durations and activities</p>
+      </div>
+    </div>
+
+    <% if (!sportList.length) { %>
+      <div class="svc-empty">
+        <svg width="40" height="40" fill="none" stroke="#CBD5E1" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <p>No sports configured for this location.<br>Go to <a href="/admin/settings" style="color:#6366F1;">Locations</a> to enable sport types.</p>
+      </div>
+    <% } else { %>
+
+    <!-- Sport Tabs: segmented control -->
+    <div class="svc-sport-tabs">
+      <div class="svc-sport-tabs-ctl">
+        <% sportList.forEach(function(st, i) { %>
+          <button class="svc-sport-tab <%= i === 0 ? 'active' : '' %>"
+                  data-sport-id="<%= st.id %>"
+                  onclick="svcSwitchSport(<%= st.id %>, '<%= st.name %>', this)">
+            <%= st.name %>
+          </button>
+        <% }); %>
+      </div>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="svc-subtabs">
+      <button class="svc-subtab active" onclick="svcSwitchSubtab('bookings', this)">Bookings</button>
+      <button class="svc-subtab" onclick="svcSwitchSubtab('activities', this)">Activities</button>
+    </div>
+
+    <!-- Scrollable content -->
+    <div class="svc-body">
+      <div class="svc-body-inner">
+
+        <!-- BOOKINGS TAB -->
+        <div id="svc-tab-bookings">
+
+          <!-- Description -->
+          <p class="svc-desc-text" id="svc-sport-desc">
+            Configure booking durations and their pricing for <%= activeSportName %>. Set a single price or enable per-court pricing for venues with different court types.
+          </p>
+
+          <!-- Dynamic slots rendered by JS -->
+          <div id="svc-slots-list"></div>
+
+          <!-- Add Duration button -->
+          <button type="button" class="svc-add-dur" id="svc-add-dur-btn" onclick="svcAddSlotCard()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Duration
+          </button>
+
+          <!-- Save button -->
+          <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+            <button type="button" class="svc-save-btn" onclick="svcSaveAllSlots()">Save Changes</button>
+          </div>
+
+        </div><!-- /svc-tab-bookings -->
+
+        <!-- ACTIVITIES TAB (hidden) -->
+        <div id="svc-tab-activities" class="svc-hidden">
+          <% sportList.forEach(function(s, i) { %>
+            <div class="svc-activities-pane <%= i===0 ? '' : 'svc-hidden' %>" data-sport-pane="<%= s.id %>">
+
+              <% if (typeof selectedVenueName !== 'undefined' && selectedVenueName) { %>
+                <div class="svc-venue-banner">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                  <span>Templates for: <strong><%= selectedVenueName %></strong></span>
+                </div>
+              <% } %>
+
+              <div class="svc-activities-list">
+                <% (templatesBySport[s.id] || []).forEach(function(t) { %>
+                  <% var levelOn = !!t.level_restriction_enabled; %>
+                  <% var minLvl = t.min_required_level || 1; %>
+                  <% var maxLvl = t.max_required_level || 5; %>
+                  <div class="svc-card svc-activity-card" data-id="<%= t.id %>">
+                    <div class="svc-card-header" onclick="svcToggleCard(this)">
+                      <span class="svc-card-title"><%= t.name %></span>
+                      <div class="svc-card-header-actions">
+                        <button type="button" class="svc-trash-btn" title="Delete" onclick="svcDeleteActivityTemplate(<%= t.id %>, event)">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                        <span class="svc-arrow"><svg fill="none" stroke="#8D99AE" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span>
+                      </div>
+                    </div>
+                    <div class="svc-card-body svc-expandable svc-hidden">
+                      <form class="svc-activity-form" data-id="<%= t.id %>" onsubmit="return svcSaveActivityTemplate(this, event)">
+                        <input type="hidden" name="sport_type" value="<%= t.sport_type %>" />
+
+                        <div class="svc-fld">
+                          <div class="svc-fld-label"><strong>Name</strong><span class="svc-caption">Activity display name</span></div>
+                          <div class="svc-fld-control"><input class="svc-input" type="text" name="name" value="<%= t.name %>" required /></div>
+                        </div>
+
+                        <div class="svc-fld">
+                          <div class="svc-fld-label"><strong>Duration</strong><span class="svc-caption">Fixed length players book for</span></div>
+                          <div class="svc-fld-control">
+                            <select class="svc-select svc-fld-select" name="duration_minutes" required>
+                              <% [60,90,120,180].forEach(function(d) { %>
+                                <option value="<%= d %>" <%= t.duration_minutes === d ? 'selected' : '' %>><%= d %> minutes</option>
+                              <% }); %>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="svc-fld">
+                          <div class="svc-fld-label"><strong>Capacity</strong><span class="svc-caption">Min / Max participants</span></div>
+                          <div class="svc-fld-control svc-cap-row">
+                            <input class="svc-input svc-num-sm" type="number" name="min_capacity" min="1" max="100" value="<%= t.min_capacity %>" required />
+                            <span class="svc-mute">to</span>
+                            <input class="svc-input svc-num-sm" type="number" name="max_capacity" min="1" max="100" value="<%= t.max_capacity %>" required />
+                            <span class="svc-mute">players</span>
+                          </div>
+                        </div>
+
+                        <div class="svc-fld">
+                          <div class="svc-fld-label"><strong>Price per player</strong></div>
+                          <div class="svc-fld-control">
+                            <div class="svc-price-input">
+                              <span class="svc-price-prefix">&pound;</span>
+                              <input class="svc-input svc-price-input-field" type="number" step="0.01" min="0.01" name="price_per_player" value="<%= t.price_per_player %>" required />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="svc-fld svc-fld-toggle">
+                          <div class="svc-fld-label"><strong>Level of Restriciton</strong><span class="svc-caption">Restrict to players of a certain level</span></div>
+                          <div class="svc-fld-control svc-fld-control-end">
+                            <label class="svc-toggle"><input type="checkbox" name="level_restriction_enabled" value="true" <%= levelOn ? 'checked' : '' %> onchange="svcToggleLevelSlider(this)" /><span class="svc-toggle-track"></span></label>
+                          </div>
+                        </div>
+
+                        <div class="svc-level-slider-wrap <%= levelOn ? '' : 'svc-hidden' %>" data-toggle-target>
+                          <div class="dual-slider">
+                            <div class="dual-slider-rail"></div>
+                            <div class="dual-slider-fill"></div>
+                            <input type="range" class="dual-min" name="min_required_level" min="1" max="5" step="1" value="<%= minLvl %>" />
+                            <input type="range" class="dual-max" name="max_required_level" min="1" max="5" step="1" value="<%= maxLvl %>" />
+                          </div>
+                          <div class="dual-slider-ticks">
+                            <span><strong>1</strong><span>Beginner</span></span>
+                            <span><strong>2</strong><span>Improver</span></span>
+                            <span><strong>3</strong><span>Intermediate</span></span>
+                            <span><strong>4</strong><span>Advanced</span></span>
+                            <span><strong>5</strong><span>Expert</span></span>
+                          </div>
+                        </div>
+
+                        <div class="svc-card-footer"><button type="submit" class="svc-save-btn">Save</button></div>
+                      </form>
+                    </div>
+                  </div>
+                <% }); %>
+              </div><!-- /svc-activities-list -->
+
+              <button type="button" class="svc-add-btn-full" onclick="svcAddActivityTemplate(<%= s.id %>)">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add Activity
+              </button>
+            </div><!-- /svc-activities-pane -->
+          <% }); %>
+        </div><!-- /svc-tab-activities -->
+
+      </div><!-- /svc-body-inner -->
+    </div><!-- /svc-body -->
+
+    <% } %>
+  </div><!-- /main column -->
+</div>
+
+<script>
+  /* URL-hash state helpers — persist active sub-tab and sport across reloads */
+  function svcReadHashState() {
+    var state = {};
+    var h = location.hash.replace(/^#/, '');
+    if (!h) return state;
+    h.split('&').forEach(function(pair) {
+      var kv = pair.split('=');
+      if (kv[0]) state[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || '');
+    });
+    return state;
+  }
+  function svcWriteHashState(updates) {
+    var state = svcReadHashState();
+    Object.keys(updates).forEach(function(k) {
+      if (updates[k] == null || updates[k] === '') delete state[k];
+      else state[k] = String(updates[k]);
+    });
+    var keys = Object.keys(state);
+    var newHash = keys.length
+      ? '#' + keys.map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(state[k]); }).join('&')
+      : '';
+    // Avoid scroll-jump from setting hash when already same.
+    if (newHash !== location.hash) {
+      try { history.replaceState(null, '', location.pathname + location.search + newHash); }
+      catch (e) { location.hash = newHash; }
+    }
+  }
+
+  /* Persistent tab state (localStorage) — survives reloads AND navigating away & back.
+     Hash is also kept in sync for shareable links. */
+  var SVC_SUBTAB_KEY = 'admin_settings_services_subtab';
+  var SVC_SPORT_KEY  = 'admin_settings_services_sport';
+
+  /* Sport tab switch */
+  function svcSwitchSport(sportId, sportName, btn) {
+    document.querySelectorAll('.svc-sport-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    var desc = document.getElementById('svc-sport-desc');
+    if (desc) desc.innerHTML = 'Configure booking durations and their pricing for <strong>' + sportName + '</strong>. Set a single price or enable per-court pricing for venues with different court types.';
+    document.querySelectorAll('.svc-activities-pane').forEach(function(p) {
+      p.classList.toggle('svc-hidden', String(p.dataset.sportPane) !== String(sportId));
+    });
+    svcWriteHashState({ sport: sportId });
+    try { localStorage.setItem(SVC_SPORT_KEY, String(sportId)); } catch (e) {}
+    // Reload booking slots for the newly selected sport
+    svcLoadSlots(sportId);
+  }
+
+  /* Sub-tab switch */
+  function svcSwitchSubtab(tab, btn) {
+    document.querySelectorAll('.svc-subtab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('svc-tab-bookings').classList.toggle('svc-hidden', tab !== 'bookings');
+    document.getElementById('svc-tab-activities').classList.toggle('svc-hidden', tab !== 'activities');
+    svcWriteHashState({ tab: tab });
+    try { localStorage.setItem(SVC_SUBTAB_KEY, tab); } catch (e) {}
+  }
+
+  /* Restore sub-tab + sport on initial load. URL hash wins (shareable), then localStorage. */
+  document.addEventListener('DOMContentLoaded', function() {
+    var state = svcReadHashState();
+    var savedTab = '', savedSport = '';
+    try {
+      savedTab = localStorage.getItem(SVC_SUBTAB_KEY) || '';
+      savedSport = localStorage.getItem(SVC_SPORT_KEY) || '';
+    } catch (e) {}
+
+    var tabToApply = (state.tab === 'activities' || state.tab === 'bookings') ? state.tab : savedTab;
+    if (tabToApply === 'activities' || tabToApply === 'bookings') {
+      var subBtn = document.querySelector('.svc-subtab[onclick*="' + tabToApply + '"]');
+      if (subBtn && !subBtn.classList.contains('active')) svcSwitchSubtab(tabToApply, subBtn);
+    }
+
+    var sportToApply = state.sport || savedSport;
+    if (sportToApply) {
+      var sportBtn = document.querySelector('.svc-sport-tab[data-sport-id="' + sportToApply + '"]');
+      if (sportBtn && !sportBtn.classList.contains('active')) {
+        svcSwitchSport(sportToApply, sportBtn.textContent.trim(), sportBtn);
+      } else {
+        // No saved sport — load for default (first) sport tab
+        var firstSportBtn = document.querySelector('.svc-sport-tab.active');
+        if (firstSportBtn) svcLoadSlots(firstSportBtn.dataset.sportId);
+      }
+    } else {
+      // No saved sport — load for default (first) sport tab
+      var firstSportBtn = document.querySelector('.svc-sport-tab.active');
+      if (firstSportBtn) svcLoadSlots(firstSportBtn.dataset.sportId);
+    }
+  });
+
+  /* Collapse/expand any card (duration card OR activity card) */
+  function svcToggleCard(hdr) {
+    var card = hdr.closest('.svc-card');
+    if (!card) return;
+    var body = card.querySelector('.svc-expandable');
+    if (!body) return;
+
+    // Activity card: uses .svc-arrow.open + .svc-hidden on body
+    var arrow = hdr.querySelector('.svc-arrow');
+    if (arrow) {
+      var hidden = body.classList.toggle('svc-hidden');
+      arrow.classList.toggle('open', !hidden);
+      return;
+    }
+
+    // Duration / pricing card: accordion — only one card open at a time.
+    var chevron = hdr.querySelector('.svc-chevron-icon');
+    var willCollapse = !body.classList.contains('svc-collapsed');
+    if (!willCollapse) {
+      // We're expanding this card — collapse all other duration cards first.
+      document.querySelectorAll('#svc-slots-list .svc-card .svc-card-body.svc-expandable').forEach(function(b) {
+        if (b === body) return;
+        b.classList.add('svc-collapsed');
+        var otherCard = b.closest('.svc-card');
+        var otherChev = otherCard && otherCard.querySelector('.svc-chevron-icon');
+        if (otherChev) otherChev.classList.add('collapsed');
+      });
+    }
+    body.classList.toggle('svc-collapsed', willCollapse);
+    if (chevron) chevron.classList.toggle('collapsed', willCollapse);
+    svcUpdateAddDurBtn();
+  }
+
+  /* Disable the global "Add Duration" button while any duration card is open. */
+  function svcUpdateAddDurBtn() {
+    var btn = document.getElementById('svc-add-dur-btn');
+    if (!btn) return;
+    var anyOpen = !!document.querySelector('#svc-slots-list .svc-card .svc-card-body.svc-expandable:not(.svc-collapsed)');
+    btn.disabled = anyOpen;
+    btn.style.opacity = anyOpen ? '0.5' : '';
+    btn.style.cursor = anyOpen ? 'not-allowed' : '';
+  }
+
+  /* Disable the per-slot "Add pricing condition" button while any condition card in that slot is open. */
+  function svcUpdateAddCondBtn(slotCard) {
+    if (!slotCard) return;
+    var btn = slotCard.querySelector('.svc-add-cond');
+    if (!btn) return;
+    var anyOpen = !!slotCard.querySelector('.svc-conds-list .svc-cond-card .svc-cond-body:not(.svc-hidden)');
+    btn.disabled = anyOpen;
+    btn.style.opacity = anyOpen ? '0.5' : '';
+    btn.style.cursor = anyOpen ? 'not-allowed' : '';
+  }
+
+  /* Remove a pricing-condition card and refresh the slot's Add button state. */
+  window.svcRemoveCondCard = function(btn) {
+    var slotCard = btn.closest('.svc-card');
+    var card = btn.closest('.svc-cond-card');
+    if (card) card.remove();
+    if (slotCard) svcUpdateAddCondBtn(slotCard);
+  };
+
+  /* ===== BOOKINGS TAB — Dynamic slot management ===== */
+
+  // All courts for the current venue (injected from server)
+  var SVC_ALL_COURTS = <%- JSON.stringify(courtList.map(function(c){ return {id: c.id, title: c.title, sport_type: c.sport_type}; })) %>;
+  var SVC_VENUE_ID   = <%= typeof selectedVenueId !== 'undefined' && selectedVenueId ? selectedVenueId : 'null' %>;
+  var SVC_ACTIVE_SPORT = null;
+
+  // Load slots from API for a given sport type
+  async function svcLoadSlots(sportId) {
+    SVC_ACTIVE_SPORT = sportId;
+    var list = document.getElementById('svc-slots-list');
+    if (!list) return;
+    if (!SVC_VENUE_ID) { list.innerHTML = ''; return; }
+    list.innerHTML = '<p style="font-size:13px;color:#94A3B8;padding:12px 0;">Loading...</p>';
+    try {
+      var res = await fetch('/admin/settings/services/bookings?venue_id=' + SVC_VENUE_ID + '&sport_type=' + sportId);
+      var json = await res.json();
+      list.innerHTML = '';
+      if (json.success && json.data.length) {
+        json.data.forEach(function(slot) { list.appendChild(svcBuildSlotCard(slot)); });
+      }
+    } catch (e) {
+      list.innerHTML = '';
+    }
+  }
+
+  // Courts filtered to the active sport type
+  function svcCourtsForSport() {
+    if (!SVC_ACTIVE_SPORT) return SVC_ALL_COURTS;
+    return SVC_ALL_COURTS.filter(function(c) {
+      if (!c.sport_type) return true;
+      return String(c.sport_type).split(',').map(function(x){ return x.trim(); }).includes(String(SVC_ACTIVE_SPORT));
+    });
+  }
+
+  // Build court select options HTML
+  function svcCourtOptions() {
+    var courts = svcCourtsForSport();
+    var html = '<option value="">Select Court</option>';
+    courts.forEach(function(c) { html += '<option value="' + c.id + '" data-label="' + c.title + '">' + c.title + '</option>'; });
+    return html;
+  }
+
+  // Build per-court price rows HTML
+  function svcCourtPriceRows(existingPrices) {
+    var courts = svcCourtsForSport();
+    if (!courts.length) return '<span style="font-size:12px;color:#94A3B8;">No courts for this sport yet.</span>';
+    var priceMap = {};
+    (existingPrices || []).forEach(function(p) { priceMap[p.court_id] = p.price; });
+    var html = '';
+    courts.forEach(function(c) {
+      var price = priceMap[c.id] !== undefined ? priceMap[c.id] : '0.00';
+      html += '<div class="svc-court-row" data-court-id="' + c.id + '">'
+            + '<span class="svc-court-row-label">' + c.title + '</span>'
+            + '<div class="svc-price-field"><span class="svc-price-pfx">&pound;</span>'
+            + '<input type="number" class="svc-input svc-price-in svc-court-price-val" value="' + price + '" step="0.01" min="0.01" />'
+            + '</div></div>';
+    });
+    return html;
+  }
+
+  // Build a single condition card HTML
+  function svcBuildCondHtml(cond) {
+    var name = (cond && cond.name) || '';
+    var price = (cond && cond.override_price) || '0.00';
+    var startTime = (cond && cond.start_time) || '08:00';
+    var endTime = (cond && cond.end_time) || '22:00';
+    var condType = (cond && cond.condition_type) || 'days';
+    var dateFrom = (cond && cond.date_from) || '';
+    var dateTo = (cond && cond.date_to) || '';
+    // Sequelize JSON fields may come back as strings — parse defensively
+    var daysArr = [];
+    if (cond && cond.days_of_week) {
+      try { daysArr = typeof cond.days_of_week === 'string' ? JSON.parse(cond.days_of_week) : cond.days_of_week; } catch(e) { daysArr = []; }
+    }
+    var courtIds = [];
+    if (cond && cond.court_ids) {
+      try { courtIds = typeof cond.court_ids === 'string' ? JSON.parse(cond.court_ids) : cond.court_ids; } catch(e) { courtIds = []; }
+    }
+
+    var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var daysHtml = dayNames.map(function(d, i) {
+      var on = daysArr.includes(i) ? ' on' : '';
+      return '<button type="button" class="svc-day' + on + '" data-day="' + i + '" onclick="this.classList.toggle(\'on\')">' + d + '</button>';
+    }).join('');
+
+    var courtBadgesHtml = '';
+    courtIds.forEach(function(cid) {
+      var court = SVC_ALL_COURTS.find(function(c){ return c.id == cid; });
+      if (court) {
+        courtBadgesHtml += '<span class="svc-court-badge" data-cid="' + court.id + '" title="Click to remove" onclick="this.remove()">' + court.title + '</span>';
+      }
+    });
+
+    return '<div class="svc-cond-card">'
+      + '<div class="svc-cond-hdr" onclick="svcToggleCond(event,this)">'
+      + '<input type="text" class="svc-cond-name" placeholder="Condition name (e.g. Peak, Off-peak)" value="' + name + '" onclick="event.stopPropagation()" />'
+      + '<div class="svc-cond-hdr-btns">'
+      + '<button type="button" class="svc-cond-btn" onclick="event.stopPropagation();svcToggleCond(event,this.closest(\'.svc-cond-hdr\'))">'
+      + '<span class="svc-cond-chevron closed"><svg fill="none" stroke="#94A3B8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg></span>'
+      + '</button>'
+      + '<button type="button" class="svc-cond-btn del" onclick="event.stopPropagation();svcRemoveCondCard(this)">'
+      + '<svg fill="none" stroke="#94A3B8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
+      + '</button></div></div>'
+      + '<div class="svc-cond-body svc-hidden">'
+      + '<div class="svc-cond-row"><span class="svc-cond-lbl">Court</span>'
+      + '<div class="svc-cond-fld-col">'
+      + '<select class="svc-court-sel" onchange="svcCourtBadge(this)">' + svcCourtOptions() + '</select>'
+      + '<div class="svc-badges-row">' + courtBadgesHtml + '</div>'
+      + '</div></div>'
+      + '<div class="svc-cond-row"><span class="svc-cond-lbl">Price</span>'
+      + '<div class="svc-cond-fld"><div class="svc-price-field"><span class="svc-price-pfx">&pound;</span>'
+      + '<input type="number" class="svc-input svc-price-in svc-cond-price" value="' + price + '" step="0.01" min="0.01" />'
+      + '</div></div></div>'
+      + '<div class="svc-cond-row"><span class="svc-cond-lbl">Time</span>'
+      + '<div class="svc-cond-fld">'
+      + '<input type="time" class="svc-input svc-time-in svc-cond-start" value="' + startTime + '" />'
+      + '<span class="svc-to">to</span>'
+      + '<input type="time" class="svc-input svc-time-in svc-cond-end" value="' + endTime + '" />'
+      + '</div></div>'
+      + '<div class="svc-cond-row"><span class="svc-cond-lbl">Applies to</span>'
+      + '<div class="svc-cond-fld"><div class="svc-applies">'
+      + '<button type="button" class="svc-apply-btn' + (condType !== 'dates' ? ' active' : '') + '" onclick="svcAppliesTo(this,\'days\')">Days of week</button>'
+      + '<button type="button" class="svc-apply-btn' + (condType === 'dates' ? ' active' : '') + '" onclick="svcAppliesTo(this,\'dates\')">Date range</button>'
+      + '</div></div></div>'
+      + '<div class="svc-cond-row svc-days-row-wrap' + (condType === 'dates' ? ' svc-hidden' : '') + '"><span class="svc-cond-lbl">Days</span>'
+      + '<div class="svc-cond-fld"><div class="svc-days">' + daysHtml + '</div></div></div>'
+      + '<div class="svc-cond-row svc-dates-row-wrap' + (condType !== 'dates' ? ' svc-hidden' : '') + '"><span class="svc-cond-lbl">Date range</span>'
+      + '<div class="svc-cond-fld">'
+      + '<input type="date" class="svc-input svc-cond-datefrom" style="width:150px;" value="' + dateFrom + '" />'
+      + '<span class="svc-to">to</span>'
+      + '<input type="date" class="svc-input svc-cond-dateto" style="width:150px;" value="' + dateTo + '" />'
+      + '</div></div>'
+      + '</div></div>';
+  }
+
+  // Build a complete slot card DOM element
+  function svcBuildSlotCard(slot) {
+    var id = (slot && slot.id) || null;
+    var durMins = (slot && slot.duration_minutes) || 60;
+    var usePerCourt = !!(slot && slot.use_per_court_price);
+    var basePrice = (slot && slot.base_price != null) ? slot.base_price : '0.00';
+    var courtPrices = (slot && slot.courtPrices) || [];
+    var conditions = (slot && slot.conditions) || [];
+
+    var div = document.createElement('div');
+    div.className = 'svc-card';
+    if (id) div.dataset.slotId = id;
+
+    var conditionsHtml = conditions.map(function(c){ return svcBuildCondHtml(c); }).join('');
+
+    div.innerHTML = ''
+      + '<div class="svc-card-hdr" onclick="svcToggleCard(this)">'
+      + '<div class="svc-card-hdr-left">'
+      + '<div class="svc-dur-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>'
+      + '<span class="svc-card-title svc-dur-label">' + durMins + ' minutes</span>'
+      + '</div>'
+      + '<div class="svc-card-hdr-right">'
+      + '<button type="button" class="svc-hdr-btn" onclick="event.stopPropagation();svcToggleCard(this.closest(\'.svc-card-hdr\'))">'
+      + '<span class="svc-chevron-icon collapsed"><svg fill="none" stroke="#94A3B8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg></span>'
+      + '</button>'
+      + '<button type="button" class="svc-hdr-btn del" title="Delete duration" onclick="event.stopPropagation();svcDeleteSlotCard(this)">'
+      + '<svg fill="none" stroke="#94A3B8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
+      + '</button>'
+      + '</div></div>'
+
+      + '<div class="svc-card-body svc-expandable svc-collapsed">'
+
+      // Duration select row
+      + '<div class="svc-section">'
+      + '<div class="svc-section-label"><strong>Duration</strong><span>Fixed length players book for</span></div>'
+      + '<div class="svc-section-val"><div class="svc-dur-inline">'
+      + '<select class="svc-input svc-dur-select" onchange="svcUpdateDurLabel(this)">'
+      + [60,90,120,180].map(function(d){ return '<option value="' + d + '"' + (d == durMins ? ' selected' : '') + '>' + d + '</option>'; }).join('')
+      + '</select>'
+      + '<span style="font-size:13px;color:#94A3B8;">minutes</span>'
+      + '</div></div></div>'
+
+      // Price per court toggle row
+      + '<div class="svc-section">'
+      + '<div class="svc-section-label"><strong>Price per court</strong><span>Set individually per court</span></div>'
+      + '<div class="svc-section-val">'
+      + '<div class="svc-toggle-wrap">'
+      + '<label class="svc-toggle"><input type="checkbox" class="svc-per-court-toggle"' + (usePerCourt ? ' checked' : '') + ' onchange="svcTogglePerCourt(this)" /><span class="svc-toggle-track"></span></label>'
+      + '<span class="svc-toggle-label">Per court</span>'
+      + '</div>'
+      // Base price input (shown when toggle OFF)
+      + '<div class="svc-base-price-wrap"' + (usePerCourt ? ' style="display:none"' : '') + '>'
+      + '<div class="svc-price-field"><span class="svc-price-pfx">&pound;</span>'
+      + '<input type="number" class="svc-input svc-price-in svc-base-price" value="' + basePrice + '" step="0.01" min="0.01" />'
+      + '</div></div>'
+      // Per-court prices (shown when toggle ON)
+      + '<div class="svc-court-prices svc-per-court-prices"' + (!usePerCourt ? ' style="display:none"' : '') + '>'
+      + svcCourtPriceRows(courtPrices)
+      + '</div>'
+      + '</div></div>'
+
+      // Pricing conditions
+      + '<div class="svc-cond-section">'
+      + '<div class="svc-cond-section-hdr"><strong>Pricing conditions</strong><span>Override the base price for specific times, days, or dates.</span></div>'
+      + '<div class="svc-conds-list">' + conditionsHtml + '</div>'
+      + '<button type="button" class="svc-add-cond" onclick="svcAddCondToSlot(this)">'
+      + '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'
+      + 'Add pricing condition</button>'
+      + '</div>'
+
+      + '</div>';
+
+    return div;
+  }
+
+  // Add a new empty slot card
+  function svcAddSlotCard() {
+    if (!svcCourtsForSport().length) {
+      window.adminToast('No courts exist for this sport. Please create a court first.', 'warning');
+      return;
+    }
+    var list = document.getElementById('svc-slots-list');
+    if (!list) return;
+    // Accordion: collapse any currently-open duration card before adding a new one.
+    list.querySelectorAll('.svc-card .svc-card-body.svc-expandable').forEach(function(b) {
+      b.classList.add('svc-collapsed');
+    });
+    list.querySelectorAll('.svc-card .svc-chevron-icon').forEach(function(c) {
+      c.classList.add('collapsed');
+    });
+    var card = svcBuildSlotCard(null);
+    // New card opens expanded so admin can fill it in immediately.
+    var newBody = card.querySelector('.svc-card-body.svc-expandable');
+    if (newBody) newBody.classList.remove('svc-collapsed');
+    var newChev = card.querySelector('.svc-chevron-icon');
+    if (newChev) newChev.classList.remove('collapsed');
+    list.appendChild(card);
+    svcUpdateAddDurBtn();
+  }
+
+  // Delete slot card (with API call if it has an id)
+  async function svcDeleteSlotCard(btn) {
+    var card = btn.closest('.svc-card');
+    var slotId = card && card.dataset.slotId;
+    if (slotId) {
+      var confirmed = await Swal.fire(Object.assign({}, window.swalTheme || {}, {
+        icon: 'warning', title: 'Delete this duration?', text: 'This cannot be undone.',
+        showCancelButton: true, confirmButtonText: 'Delete', confirmButtonColor: '#DC2626',
+      }));
+      if (!confirmed.isConfirmed) return;
+      try {
+        var r = await fetch('/admin/settings/services/bookings/slot/' + slotId + '/delete', { method: 'POST' });
+        var j = await r.json();
+        if (!j.success) { window.adminToast(j.message || 'Delete failed', 'error'); return; }
+      } catch (e) { window.adminToast('Network error', 'error'); return; }
+    }
+    card.remove();
+    svcUpdateAddDurBtn();
+    window.adminToast('Duration removed', 'success');
+  }
+
+  // Per-court toggle handler inside a slot card
+  function svcTogglePerCourt(chk) {
+    var section = chk.closest('.svc-section-val');
+    var baseWrap = section.querySelector('.svc-base-price-wrap');
+    var perWrap  = section.querySelector('.svc-per-court-prices');
+    if (baseWrap) baseWrap.style.display = chk.checked ? 'none' : '';
+    if (perWrap)  perWrap.style.display  = chk.checked ? '' : 'none';
+  }
+
+  // Update card header label when duration dropdown changes
+  function svcUpdateDurLabel(sel) {
+    var card = sel.closest('.svc-card');
+    var lbl = card && card.querySelector('.svc-dur-label');
+    if (lbl) lbl.textContent = sel.value + ' minutes';
+  }
+
+  /* Condition card: collapse/expand — accordion within the slot. */
+  function svcToggleCond(e, hdr) {
+    var card = hdr.closest('.svc-cond-card');
+    var body = card && card.querySelector('.svc-cond-body');
+    var chev = hdr && hdr.querySelector('.svc-cond-chevron');
+    if (!body) return;
+    var slotCard = hdr.closest('.svc-card');
+    var willHide = !body.classList.contains('svc-hidden');
+    if (!willHide && slotCard) {
+      // Expanding this condition — close any other open conditions in the same slot first.
+      slotCard.querySelectorAll('.svc-conds-list .svc-cond-card').forEach(function(other) {
+        var b = other.querySelector('.svc-cond-body');
+        if (!b || b === body) return;
+        if (!b.classList.contains('svc-hidden')) {
+          b.classList.add('svc-hidden');
+          var oc = other.querySelector('.svc-cond-chevron');
+          if (oc) { oc.classList.add('closed'); oc.classList.remove('open'); }
+        }
+      });
+    }
+    body.classList.toggle('svc-hidden', willHide);
+    if (chev) { chev.classList.toggle('open', !willHide); chev.classList.toggle('closed', willHide); }
+    svcUpdateAddCondBtn(slotCard);
+  }
+
+  /* Applies to: days / date range */
+  function svcAppliesTo(btn, mode) {
+    var card = btn.closest('.svc-cond-card');
+    card.querySelectorAll('.svc-apply-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    card.querySelector('.svc-days-row-wrap').classList.toggle('svc-hidden', mode !== 'days');
+    card.querySelector('.svc-dates-row-wrap').classList.toggle('svc-hidden', mode !== 'dates');
+  }
+
+  /* Court badge: select a court in condition */
+  function svcCourtBadge(sel) {
+    var val = sel.value;
+    if (!val) return;
+    var label = sel.options[sel.selectedIndex].dataset.label || sel.options[sel.selectedIndex].text;
+    var row = sel.closest('.svc-cond-fld-col').querySelector('.svc-badges-row');
+    if (row.querySelector('[data-cid="' + val + '"]')) { sel.value = ''; return; }
+    var b = document.createElement('span');
+    b.className = 'svc-court-badge';
+    b.dataset.cid = val;
+    b.textContent = label;
+    b.title = 'Click to remove';
+    b.onclick = function(){ b.remove(); };
+    row.appendChild(b);
+    sel.value = '';
+  }
+
+  /* Add a new empty condition card to a slot */
+  function svcAddCondToSlot(btn) {
+    if (!svcCourtsForSport().length) {
+      window.adminToast('No courts exist for this sport. Please create a court first.', 'warning');
+      return;
+    }
+    var slotCard = btn.closest('.svc-card');
+    var condsList = btn.closest('.svc-cond-section').querySelector('.svc-conds-list');
+    // Accordion: collapse any currently-open condition in this slot.
+    condsList.querySelectorAll('.svc-cond-body').forEach(function(b) { b.classList.add('svc-hidden'); });
+    condsList.querySelectorAll('.svc-cond-chevron').forEach(function(c) {
+      c.classList.add('closed'); c.classList.remove('open');
+    });
+    var div = document.createElement('div');
+    div.innerHTML = svcBuildCondHtml(null);
+    var newCard = div.firstChild;
+    // Open the newly-added condition so admin can fill it in immediately.
+    var newBody = newCard.querySelector('.svc-cond-body');
+    if (newBody) newBody.classList.remove('svc-hidden');
+    var newChev = newCard.querySelector('.svc-cond-chevron');
+    if (newChev) { newChev.classList.add('open'); newChev.classList.remove('closed'); }
+    condsList.appendChild(newCard);
+    svcUpdateAddCondBtn(slotCard);
+  }
+
+  /* Collect all slot data from DOM and POST to server */
+  async function svcSaveAllSlots() {
+    if (!SVC_VENUE_ID || !SVC_ACTIVE_SPORT) { window.adminToast('No venue or sport selected', 'error'); return; }
+    var list = document.getElementById('svc-slots-list');
+    if (!list) return;
+    var cards = list.querySelectorAll('.svc-card');
+    var slots = [];
+
+    cards.forEach(function(card) {
+      var slotId = card.dataset.slotId ? parseInt(card.dataset.slotId, 10) : null;
+      var durSel = card.querySelector('.svc-dur-select');
+      var durMins = durSel ? parseInt(durSel.value, 10) : 60;
+      var toggle = card.querySelector('.svc-per-court-toggle');
+      var usePerCourt = toggle ? toggle.checked : false;
+      var baseInput = card.querySelector('.svc-base-price');
+      var basePrice = baseInput ? parseFloat(baseInput.value) || 0 : 0;
+
+      // Per-court prices
+      var courtPrices = [];
+      card.querySelectorAll('.svc-per-court-prices .svc-court-row').forEach(function(row) {
+        var cid = parseInt(row.dataset.courtId, 10);
+        var pInput = row.querySelector('.svc-court-price-val');
+        var price = pInput ? parseFloat(pInput.value) || 0 : 0;
+        if (cid) courtPrices.push({ court_id: cid, price: price });
+      });
+
+      // Conditions
+      var conditions = [];
+      card.querySelectorAll('.svc-conds-list .svc-cond-card').forEach(function(cc) {
+        var nameEl = cc.querySelector('.svc-cond-name');
+        var priceEl = cc.querySelector('.svc-cond-price');
+        var startEl = cc.querySelector('.svc-cond-start');
+        var endEl   = cc.querySelector('.svc-cond-end');
+        var activeBtn = cc.querySelector('.svc-apply-btn.active');
+        var condType = activeBtn && activeBtn.textContent.trim().toLowerCase().includes('date') ? 'dates' : 'days';
+
+        var courtIds = [];
+        cc.querySelectorAll('.svc-badges-row .svc-court-badge').forEach(function(badge) {
+          var cid = parseInt(badge.dataset.cid, 10);
+          if (cid) courtIds.push(cid);
+        });
+
+        var daysOfWeek = [];
+        cc.querySelectorAll('.svc-day.on').forEach(function(d){ daysOfWeek.push(parseInt(d.dataset.day, 10)); });
+
+        var dateFrom = cc.querySelector('.svc-cond-datefrom');
+        var dateTo   = cc.querySelector('.svc-cond-dateto');
+
+        conditions.push({
+          name: nameEl ? nameEl.value : '',
+          court_ids: courtIds,
+          override_price: priceEl ? parseFloat(priceEl.value) || 0 : 0,
+          start_time: startEl ? startEl.value : null,
+          end_time: endEl ? endEl.value : null,
+          condition_type: condType,
+          days_of_week: condType === 'days' ? daysOfWeek : [],
+          date_from: condType === 'dates' && dateFrom ? dateFrom.value : null,
+          date_to: condType === 'dates' && dateTo ? dateTo.value : null,
+        });
+      });
+
+      var slotObj = { duration_minutes: durMins, use_per_court_price: usePerCourt, base_price: basePrice, court_prices: courtPrices, conditions: conditions };
+      if (slotId) slotObj.id = slotId;
+      slots.push(slotObj);
+    });
+
+    // Validate all price fields > 0 before sending
+    for (var _si = 0; _si < slots.length; _si++) {
+      var _s = slots[_si];
+      if (!_s.use_per_court_price) {
+        if (!_s.base_price || _s.base_price <= 0) {
+          window.adminToast('Price per court must be greater than 0', 'error'); return;
+        }
+      } else {
+        for (var _ci = 0; _ci < _s.court_prices.length; _ci++) {
+          if (!_s.court_prices[_ci].price || _s.court_prices[_ci].price <= 0) {
+            window.adminToast('Each court price must be greater than 0', 'error'); return;
+          }
+        }
+      }
+      for (var _ki = 0; _ki < _s.conditions.length; _ki++) {
+        var _cond = _s.conditions[_ki];
+        if (!_cond.court_ids || !_cond.court_ids.length) {
+          window.adminToast('Please select at least one court for pricing condition "' + (_cond.name || 'Condition ' + (_ki + 1)) + '"', 'error'); return;
+        }
+        if (!_cond.override_price || _cond.override_price <= 0) {
+          window.adminToast('Pricing condition price must be greater than 0', 'error'); return;
+        }
+      }
+    }
+
+    // BG_02: end date must be after start date in date-range conditions
+    // BG_03: no duplicate overlapping conditions (same court + time + period)
+    var _toMins = function(t) { if (!t) return null; var p = t.split(':'); return +p[0] * 60 + (+p[1] || 0); };
+    for (var _bi = 0; _bi < slots.length; _bi++) {
+      var _bconds = slots[_bi].conditions;
+      for (var _bj = 0; _bj < _bconds.length; _bj++) {
+        var _ca = _bconds[_bj];
+        // BG_02
+        if (_ca.condition_type === 'dates') {
+          if (!_ca.date_from || !_ca.date_to) {
+            window.adminToast('Please enter both start and end dates for condition "' + (_ca.name || 'Condition ' + (_bj + 1)) + '"', 'error'); return;
+          }
+          if (_ca.date_from >= _ca.date_to) {
+            window.adminToast('End date must be after start date in condition "' + (_ca.name || 'Condition ' + (_bj + 1)) + '"', 'error'); return;
+          }
+        }
+        // BG_03: compare against every later condition in same slot
+        for (var _bk = _bj + 1; _bk < _bconds.length; _bk++) {
+          var _cb = _bconds[_bk];
+          var _courtOvlp = _ca.court_ids.some(function(id) { return _cb.court_ids.indexOf(id) !== -1; });
+          if (!_courtOvlp) continue;
+          var _ts1 = _toMins(_ca.start_time), _te1 = _toMins(_ca.end_time);
+          var _ts2 = _toMins(_cb.start_time), _te2 = _toMins(_cb.end_time);
+          var _timeOvlp = _ts1 !== null && _te1 !== null && _ts2 !== null && _te2 !== null && _ts1 < _te2 && _ts2 < _te1;
+          if (!_timeOvlp) continue;
+          if (_ca.condition_type !== _cb.condition_type) continue;
+          var _periodOvlp = false;
+          if (_ca.condition_type === 'days') {
+            _periodOvlp = _ca.days_of_week.some(function(d) { return _cb.days_of_week.indexOf(d) !== -1; });
+          } else {
+            _periodOvlp = _ca.date_from <= _cb.date_to && _cb.date_from <= _ca.date_to;
+          }
+          if (!_periodOvlp) continue;
+          window.adminToast(
+            'Duplicate overlapping conditions: "' + (_ca.name || 'Condition ' + (_bj + 1)) + '" and "' + (_cb.name || 'Condition ' + (_bk + 1)) + '" overlap on the same court and time period.',
+            'error'
+          );
+          return;
+        }
+      }
+    }
+
+    window.showOverlay();
+    try {
+      var res = await fetch('/admin/settings/services/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ venue_id: SVC_VENUE_ID, sport_type: SVC_ACTIVE_SPORT, slots: slots }),
+      });
+      var json = await res.json();
+      if (!json.success) { window.adminToast(json.message || 'Save failed', 'error'); return; }
+      Swal.fire(Object.assign({}, window.swalTheme, {
+        icon: 'success', title: 'Saved!', text: 'Booking slots saved successfully.',
+        timer: 1800, showConfirmButton: false,
+      }));
+      setTimeout(function(){ svcLoadSlots(SVC_ACTIVE_SPORT); }, 1800);
+    } catch (e) {
+      window.adminToast('Network error: ' + (e.message || 'Please try again.'), 'error');
+    } finally {
+      window.hideOverlay();
+    }
+  }
+
+  async function svcSaveActivityTemplate(formEl, ev) {
+    ev.preventDefault();
+    var data = new FormData(formEl);
+    var levelEnabled = data.get('level_restriction_enabled') === 'true';
+    var body = {
+      sport_type: parseInt(data.get('sport_type'), 10),
+      name: data.get('name'),
+      duration_minutes: parseInt(data.get('duration_minutes'), 10),
+      min_capacity: parseInt(data.get('min_capacity'), 10),
+      max_capacity: parseInt(data.get('max_capacity'), 10),
+      price_per_player: parseFloat(data.get('price_per_player')),
+      level_restriction_enabled: levelEnabled,
+    };
+    if (levelEnabled) {
+      var lo = parseInt(data.get('min_required_level'), 10);
+      var hi = parseInt(data.get('max_required_level'), 10);
+      if (lo > hi) { var t = lo; lo = hi; hi = t; }
+      body.min_required_level = lo;
+      body.max_required_level = hi;
+    }
+
+    if (!body.price_per_player || body.price_per_player <= 0) {
+      window.adminToast('Price per player must be greater than 0', 'error'); return;
+    }
+
+    var id = formEl.dataset.id;
+    var url = (id && id !== 'new')
+      ? '/admin/settings/services/activity-template/' + id
+      : '/admin/settings/services/activity-template';
+    var submitBtn = formEl.querySelector('button[type="submit"]');
+    window.showBtnLoader(submitBtn);
+    try {
+      var res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      var json = await res.json();
+      if (!json.success) {
+        window.adminToast(json.message || 'Save failed', 'error');
+        return false;
+      }
+      Swal.fire(Object.assign({}, window.swalTheme, {
+        icon: 'success', title: 'Saved!', text: id && id !== 'new' ? 'Activity updated successfully.' : 'Activity created successfully.',
+        timer: 1800, showConfirmButton: false,
+      }));
+      setTimeout(function() { location.reload(); }, 1800);
+    } catch (e) {
+      window.adminToast('Network error: ' + (e.message || 'Please try again.'), 'error');
+    } finally {
+      window.hideBtnLoader(submitBtn);
+    }
+    return false;
+  }
+
+  // Show / hide the level range slider when its toggle flips
+  function svcToggleLevelSlider(checkbox) {
+    var form = checkbox.closest('form');
+    if (!form) return;
+    var wrap = form.querySelector('[data-toggle-target]');
+    if (!wrap) return;
+    wrap.classList.toggle('svc-hidden', !checkbox.checked);
+    if (checkbox.checked) {
+      var slider = wrap.querySelector('.dual-slider');
+      if (slider) svcRefreshDualSlider(slider);
+    }
+  }
+
+  // Update the fill bar between the two thumbs of a dual range slider
+  function svcRefreshDualSlider(slider) {
+    var minEl = slider.querySelector('.dual-min');
+    var maxEl = slider.querySelector('.dual-max');
+    var fill = slider.querySelector('.dual-slider-fill');
+    if (!minEl || !maxEl || !fill) return;
+    var lo = parseInt(minEl.value, 10);
+    var hi = parseInt(maxEl.value, 10);
+    if (lo > hi) {
+      // Visually we still show fill from the smaller value to the larger one;
+      // form submit handler also normalises before sending.
+      var t = lo; lo = hi; hi = t;
+    }
+    var loPct = ((lo - 1) / 4) * 100;
+    var hiPct = ((hi - 1) / 4) * 100;
+    fill.style.left = loPct + '%';
+    fill.style.right = (100 - hiPct) + '%';
+  }
+
+  // Wire up all dual sliders on the page (initial render + after Add Activity inserts a card)
+  function svcInitDualSliders(scope) {
+    (scope || document).querySelectorAll('.dual-slider').forEach(function(slider) {
+      if (slider.dataset.dualInit === '1') return;
+      slider.dataset.dualInit = '1';
+      var minEl = slider.querySelector('.dual-min');
+      var maxEl = slider.querySelector('.dual-max');
+      var refresh = function() { svcRefreshDualSlider(slider); };
+      if (minEl) minEl.addEventListener('input', refresh);
+      if (maxEl) maxEl.addEventListener('input', refresh);
+      refresh();
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function() { svcInitDualSliders(); });
+
+  async function svcDeleteActivityTemplate(id, ev) {
+    ev.stopPropagation();
+    var confirmed = await Swal.fire(Object.assign({}, window.swalTheme || {}, {
+      icon: 'warning',
+      title: 'Delete this activity template?',
+      text: 'This action cannot be undone.',
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#DC2626',
+    }));
+    if (!confirmed.isConfirmed) return;
+    try {
+      var res = await fetch('/admin/settings/services/activity-template/' + id + '/delete', { method: 'POST' });
+      var json = await res.json();
+      if (!json.success) {
+        window.adminToast(json.message || 'Delete failed', 'error');
+        return;
+      }
+      window.adminToast('Activity deleted', 'success');
+      setTimeout(function() { location.reload(); }, 900);
+    } catch (e) {
+      window.adminToast('Network error: ' + (e.message || 'Please try again.'), 'error');
+    }
+  }
+
+  function svcAddActivityTemplate(sportId) {
+    var pane = document.querySelector('.svc-activities-pane[data-sport-pane="' + sportId + '"]');
+    if (!pane) return;
+    var list = pane.querySelector('.svc-activities-list');
+    var addBtn = pane.querySelector('.svc-add-btn-full');
+
+    // Only allow one unsaved new card at a time — scroll to existing one if present.
+    var existingNew = list.querySelector('.svc-activity-card[data-id="new"]');
+    if (existingNew) { existingNew.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+
+    var card = document.createElement('div');
+    card.className = 'svc-card svc-activity-card';
+    card.dataset.id = 'new';
+    card.innerHTML = ''
+      + '<div class="svc-card-header" onclick="svcToggleCard(this)">'
+      + '  <span class="svc-card-title">New activity</span>'
+      + '  <div class="svc-card-header-actions">'
+      + '    <button type="button" class="svc-trash-btn" title="Cancel" onclick="svcCancelNewCard(event, this)">'
+      + '      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M6 18L18 6M6 6l12 12"/></svg>'
+      + '    </button>'
+      + '    <span class="svc-arrow open"><svg fill="none" stroke="#8D99AE" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span>'
+      + '  </div>'
+      + '</div>'
+      + '<div class="svc-card-body svc-expandable">'
+      + '  <form class="svc-activity-form" data-id="new" onsubmit="return svcSaveActivityTemplate(this, event)">'
+      + '    <input type="hidden" name="sport_type" value="' + sportId + '" />'
+
+      + '    <div class="svc-fld">'
+      + '      <div class="svc-fld-label"><strong>Name</strong><span class="svc-caption">Activity display name</span></div>'
+      + '      <div class="svc-fld-control"><input class="svc-input" type="text" name="name" required /></div>'
+      + '    </div>'
+
+      + '    <div class="svc-fld">'
+      + '      <div class="svc-fld-label"><strong>Duration</strong><span class="svc-caption">Fixed length players book for</span></div>'
+      + '      <div class="svc-fld-control">'
+      + '        <select class="svc-select svc-fld-select" name="duration_minutes" required>'
+      + '          <option value="60" selected>60 minutes</option>'
+      + '          <option value="90">90 minutes</option>'
+      + '          <option value="120">120 minutes</option>'
+      + '          <option value="180">180 minutes</option>'
+      + '        </select>'
+      + '      </div>'
+      + '    </div>'
+
+      + '    <div class="svc-fld">'
+      + '      <div class="svc-fld-label"><strong>Capacity</strong><span class="svc-caption">Min / Max participants</span></div>'
+      + '      <div class="svc-fld-control svc-cap-row">'
+      + '        <input class="svc-input svc-num-sm" type="number" name="min_capacity" min="1" max="100" value="2" required />'
+      + '        <span class="svc-mute">to</span>'
+      + '        <input class="svc-input svc-num-sm" type="number" name="max_capacity" min="1" max="100" value="12" required />'
+      + '        <span class="svc-mute">players</span>'
+      + '      </div>'
+      + '    </div>'
+
+      + '    <div class="svc-fld">'
+      + '      <div class="svc-fld-label"><strong>Price per player</strong></div>'
+      + '      <div class="svc-fld-control">'
+      + '        <div class="svc-price-input">'
+      + '          <span class="svc-price-prefix">&pound;</span>'
+      + '          <input class="svc-input svc-price-input-field" type="number" step="0.01" min="0.01" name="price_per_player" value="0" required />'
+      + '        </div>'
+      + '      </div>'
+      + '    </div>'
+
+      + '    <div class="svc-fld svc-fld-toggle">'
+      + '      <div class="svc-fld-label"><strong>Level of Restriciton</strong><span class="svc-caption">Restrict to players of a certain level</span></div>'
+      + '      <div class="svc-fld-control svc-fld-control-end">'
+      + '        <label class="svc-toggle"><input type="checkbox" name="level_restriction_enabled" value="true" onchange="svcToggleLevelSlider(this)" /><span class="svc-toggle-track"></span></label>'
+      + '      </div>'
+      + '    </div>'
+
+      + '    <div class="svc-level-slider-wrap svc-hidden" data-toggle-target>'
+      + '      <div class="dual-slider">'
+      + '        <div class="dual-slider-rail"></div>'
+      + '        <div class="dual-slider-fill"></div>'
+      + '        <input type="range" class="dual-min" name="min_required_level" min="1" max="5" step="1" value="1" />'
+      + '        <input type="range" class="dual-max" name="max_required_level" min="1" max="5" step="1" value="5" />'
+      + '      </div>'
+      + '      <div class="dual-slider-ticks">'
+      + '        <span><strong>1</strong><span>Beginner</span></span>'
+      + '        <span><strong>2</strong><span>Improver</span></span>'
+      + '        <span><strong>3</strong><span>Intermediate</span></span>'
+      + '        <span><strong>4</strong><span>Advanced</span></span>'
+      + '        <span><strong>5</strong><span>Expert</span></span>'
+      + '      </div>'
+      + '    </div>'
+
+      + '    <div class="svc-card-footer"><button type="submit" class="svc-save-btn">Save</button></div>'
+      + '  </form>'
+      + '</div>';
+
+    list.appendChild(card);
+
+    // New card opens by default — set arrow rotation and reveal body.
+    var arrow = card.querySelector('.svc-arrow');
+    var body = card.querySelector('.svc-expandable');
+    if (arrow) arrow.classList.add('open');
+    if (body) body.classList.remove('svc-hidden');
+
+    // Wire the dual slider for this newly-inserted card
+    svcInitDualSliders(card);
+
+    // Disable the "+ Add Activity" button so only one unsaved card can exist.
+    if (addBtn) { addBtn.disabled = true; addBtn.classList.add('svc-add-btn-full--disabled'); }
+
+    // Focus the name input for immediate typing
+    var nameInput = card.querySelector('input[name="name"]');
+    if (nameInput) nameInput.focus();
+  }
+
+  // Remove an unsaved new card and re-enable its pane's "+ Add Activity" button.
+  function svcCancelNewCard(ev, btn) {
+    ev.stopPropagation();
+    var card = btn.closest('.svc-activity-card');
+    if (!card || card.dataset.id !== 'new') return;
+    var pane = card.closest('.svc-activities-pane');
+    card.remove();
+    if (pane) {
+      var addBtn = pane.querySelector('.svc-add-btn-full');
+      if (addBtn) { addBtn.disabled = false; addBtn.classList.remove('svc-add-btn-full--disabled'); }
+    }
+  }
+</script>

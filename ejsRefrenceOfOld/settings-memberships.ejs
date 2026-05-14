@@ -1,0 +1,791 @@
+<% var currentPage = 'settings-memberships'; %>
+
+<style>
+  .ms-wrapper { display: flex; height: calc(100vh - 0px); }
+
+  /* Main */
+  .ms-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow-y: auto; }
+
+  /* Breadcrumb */
+  .ms-breadcrumb-bar {
+    background: #FFFFFF; padding: 16px 32px; border-bottom: 1px solid #E7EBEF;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .ms-breadcrumb { display: flex; align-items: center; gap: 8px; }
+  .ms-breadcrumb a {
+    display: flex; align-items: center; gap: 6px; font-size: 13px; color: #8D99AE;
+    text-decoration: none; font-weight: 400;
+  }
+  .ms-breadcrumb a:hover { color: #6b7280; }
+  .ms-breadcrumb .ms-sep { font-size: 13px; color: rgba(141,153,174,0.4); }
+  .ms-breadcrumb .ms-current { font-size: 13px; font-weight: 600; color: #2B2D42; }
+  .ms-breadcrumb .ms-mid { font-size: 13px; font-weight: 400; color: #8D99AE; }
+
+  /* Title */
+  .ms-title-section {
+    background: #FFFFFF; padding: 20px 32px; border-bottom: 1px solid #E7EBEF;
+    display: flex; align-items: flex-start; justify-content: space-between;
+  }
+  .ms-title-section h1 { font-size: 18px; font-weight: 700; color: #2B2D42; line-height: 1.4; }
+  .ms-title-section p { font-size: 13px; color: #8D99AE; margin-top: 2px; }
+  .ms-save-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+    background: #2B2D42; border: none; border-radius: 8px;
+    font-size: 13px; font-weight: 500; color: #FFFFFF; cursor: pointer; white-space: nowrap;
+    box-shadow: 0px 1px 2px rgba(0,0,0,0.1);
+  }
+  .ms-save-btn:hover { background: #1a1b2e; }
+  .ms-save-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+  /* Content */
+  .ms-content { background: #F2F4F7; flex: 1; padding: 24px 32px; }
+  .ms-cards { display: flex; flex-direction: column; gap: 10px; max-width: 720px; }
+
+  /* Plan Card */
+  .ms-card {
+    background: #FFFFFF; border: 1px solid #E7EBEF; border-radius: 10px; overflow: hidden;
+  }
+  .ms-card-header {
+    display: flex; align-items: center; padding: 14px 16px; gap: 10px;
+  }
+  .ms-drag-handle { width: 16px; height: 16px; flex-shrink: 0; color: #d1d5db; cursor: grab; }
+  .ms-card-name {
+    flex: 1; border: none; border-bottom: 1px solid transparent; padding: 4px 0;
+    font-size: 14px; font-weight: 500; color: #2B2D42; background: transparent;
+    outline: none; transition: border-color 0.15s;
+  }
+  .ms-card-name:focus { border-bottom-color: #6366F1; }
+  .ms-card-name::placeholder { color: #8D99AE; font-weight: 400; }
+  .ms-chevron {
+    width: 24px; height: 24px; border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0;
+  }
+  .ms-chevron svg { transition: transform 0.25s; }
+  .ms-chevron.expanded svg { transform: rotate(180deg); }
+  .ms-delete-btn {
+    width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+  }
+  .ms-delete-btn:hover { background: #FEF2F2; }
+
+  /* Card Body */
+  .ms-card-body {
+    border-top: 1px solid #E7EBEF; padding: 20px 16px 20px 16px; display: none;
+  }
+  .ms-card-body.open { display: block; }
+
+  /* Field rows - horizontal layout like Figma */
+  .ms-field { margin-bottom: 24px; display: flex; align-items: flex-start; gap: 16px; }
+  .ms-field:last-child { margin-bottom: 0; }
+  .ms-field-label { min-width: 160px; flex-shrink: 0; padding-top: 6px; }
+  .ms-field-label .ms-label { font-size: 14px; font-weight: 600; color: #2B2D42; display: block; margin-bottom: 2px; }
+  .ms-field-label .ms-sublabel { font-size: 12px; color: #8D99AE; line-height: 1.4; }
+  .ms-field-content { flex: 1; }
+
+  /* Discount section - full width */
+  .ms-field-full { margin-bottom: 24px; }
+  .ms-field-full:last-child { margin-bottom: 0; }
+  .ms-field-full .ms-label { font-size: 14px; font-weight: 600; color: #2B2D42; display: block; margin-bottom: 2px; }
+  .ms-field-full .ms-sublabel { font-size: 12px; color: #8D99AE; line-height: 1.4; margin-bottom: 10px; }
+
+  .ms-input {
+    height: 36px; padding: 0 10px; border: 1px solid #E7EBEF; border-radius: 6px;
+    font-size: 13px; color: #2B2D42; background: #FFFFFF; outline: none; box-sizing: border-box;
+  }
+  .ms-input:focus { border-color: #6366F1; box-shadow: 0 0 0 2px rgba(99,102,241,0.1); }
+  .ms-textarea {
+    width: 100%; min-height: 80px; padding: 8px 10px; border: 1px solid #E7EBEF; border-radius: 6px;
+    font-size: 13px; color: #2B2D42; background: #FFFFFF; outline: none; box-sizing: border-box;
+    resize: vertical; font-family: inherit;
+  }
+  .ms-textarea:focus { border-color: #6366F1; box-shadow: 0 0 0 2px rgba(99,102,241,0.1); }
+  .ms-textarea::placeholder { color: #8D99AE; }
+  .ms-inline { display: flex; align-items: center; gap: 8px; }
+  .ms-suffix { font-size: 13px; color: #8D99AE; }
+
+  /* Toggle Buttons Group */
+  .ms-btn-group { display: inline-flex; border: 1px solid #E7EBEF; border-radius: 20px; overflow: hidden; }
+  .ms-btn-opt {
+    padding: 6px 16px; font-size: 13px; font-weight: 500; border: none; cursor: pointer;
+    background: #FFFFFF; color: #8D99AE; transition: all 0.15s;
+  }
+  .ms-btn-opt.active { background: #2B2D42; color: #FFFFFF; }
+  .ms-btn-opt:not(:last-child) { border-right: 1px solid #E7EBEF; }
+
+  /* Venue chips */
+  .ms-venue-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ms-venue-chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px;
+    border: 1px solid #E7EBEF; border-radius: 20px; font-size: 13px; font-weight: 500;
+    color: #8D99AE; cursor: pointer; transition: all 0.15s; background: #FFFFFF;
+  }
+  .ms-venue-chip.active { background: #EEF2FF; border-color: #C7D2FE; color: #6366F1; }
+  .ms-venue-chip:hover { border-color: #C7D2FE; }
+
+  /* Discount section */
+  .ms-discount-card {
+    background: #F8F9FB; border: 1px solid #E7EBEF; border-radius: 10px; padding: 16px; margin-bottom: 10px;
+  }
+  .ms-discount-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  }
+  .ms-discount-name {
+    flex: 1; border: 1px solid #E7EBEF; border-radius: 6px; padding: 8px 12px;
+    font-size: 13px; color: #2B2D42; background: #FFFFFF; outline: none;
+  }
+  .ms-discount-name:focus { border-color: #6366F1; }
+  .ms-discount-name::placeholder { color: #8D99AE; }
+  .ms-discount-del {
+    width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .ms-discount-del:hover { background: #FEF2F2; }
+  .ms-discount-chevron {
+    width: 24px; height: 24px; border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0;
+  }
+
+  .ms-discount-row { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+  .ms-discount-row .ms-row-label { font-size: 13px; font-weight: 500; color: #2B2D42; min-width: 80px; }
+
+  /* Toggle switch */
+  .ms-toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; cursor: pointer; display: inline-block; }
+  .ms-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .ms-toggle-slider {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: #d1d5db; border-radius: 11px; transition: 0.25s;
+  }
+  .ms-toggle-slider::before {
+    content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px;
+    background: white; border-radius: 50%; transition: 0.25s;
+  }
+  .ms-toggle input:checked + .ms-toggle-slider { background: #2B2D42; }
+  .ms-toggle input:checked + .ms-toggle-slider::before { transform: translateX(18px); }
+
+  /* Applies-to buttons */
+  .ms-applies-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ms-applies-btn {
+    padding: 6px 14px; font-size: 13px; font-weight: 500; border: 1px solid #E7EBEF;
+    border-radius: 20px; cursor: pointer; background: #FFFFFF; color: #8D99AE; transition: all 0.15s;
+  }
+  .ms-applies-btn.active { background: #2B2D42; color: #FFFFFF; border-color: #2B2D42; }
+  .ms-applies-btn:hover { border-color: #C7D2FE; }
+
+  /* Add plan button */
+  .ms-add-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 16px; width: 100%;
+    background: transparent; border: none;
+    font-size: 13px; font-weight: 500; color: #8D99AE; cursor: pointer; transition: all 0.15s;
+  }
+  .ms-add-btn:hover { color: #6366F1; }
+  .ms-add-btn svg { width: 16px; height: 16px; }
+
+  .ms-hidden { display: none !important; }
+
+  /* Discount list container */
+  .ms-discounts-list { display: flex; flex-direction: column; gap: 10px; }
+
+  /* Separator line between fields */
+  .ms-separator { border: none; border-top: 1px solid #E7EBEF; margin: 0 0 24px 0; }
+</style>
+
+<div class="ms-wrapper">
+  <!-- ======== MAIN ======== -->
+  <div class="ms-main">
+    <!-- Title -->
+    <div class="ms-title-section">
+      <div>
+        <h1>Membership</h1>
+        <p>Membership tiers apply across all locations.</p>
+      </div>
+      <button type="button" class="ms-save-btn" id="ms-save-all-btn" onclick="msSaveAll()">
+        Save Changes
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="ms-content">
+      <div class="ms-cards" id="ms-plan-list">
+
+        <% if (typeof plans !== 'undefined' && plans.length > 0) { %>
+          <% plans.forEach(function(plan) { %>
+            <div class="ms-card" data-plan-id="<%= plan.id %>">
+              <div class="ms-card-header">
+                <!-- Drag Handle -->
+                <svg class="ms-drag-handle" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="3" r="1.5"/><circle cx="11" cy="3" r="1.5"/><circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="5" cy="13" r="1.5"/><circle cx="11" cy="13" r="1.5"/></svg>
+                <!-- Name Input -->
+                <input type="text" class="ms-card-name" data-field="name" value="<%= plan.name %>" placeholder="Membership name..." />
+                <!-- Collapse Toggle -->
+                <button type="button" class="ms-chevron" onclick="msToggleCard(this)">
+                  <svg width="16" height="16" fill="none" stroke="#8D99AE" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <!-- Delete -->
+                <button type="button" class="ms-delete-btn" onclick="msDeletePlan(<%= plan.id %>, this)">
+                  <svg width="14" height="14" fill="none" stroke="#8D99AE" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+
+              <div class="ms-card-body">
+                <!-- Duration -->
+                <div class="ms-field">
+                  <div class="ms-field-label">
+                    <span class="ms-label">Duration</span>
+                    <span class="ms-sublabel">Set a fixed length or an end date</span>
+                  </div>
+                  <div class="ms-field-content">
+                    <div style="margin-bottom:10px;">
+                      <div class="ms-btn-group" data-field="duration_type">
+                        <button type="button" class="ms-btn-opt <%= plan.duration_type === 'fixed_length' ? 'active' : '' %>" data-value="fixed_length" onclick="msSetDurationType(this)">Fixed length</button>
+                        <button type="button" class="ms-btn-opt <%= plan.duration_type === 'end_date' ? 'active' : '' %>" data-value="end_date" onclick="msSetDurationType(this)">End date</button>
+                      </div>
+                    </div>
+                    <div class="ms-duration-fixed ms-inline" style="<%= plan.duration_type === 'end_date' ? 'display:none' : '' %>">
+                      <input type="number" class="ms-input" data-field="duration_months" value="<%= plan.duration_months %>" style="width:80px;" min="1" />
+                      <span class="ms-suffix">months</span>
+                    </div>
+                    <div class="ms-duration-enddate" style="<%= plan.duration_type === 'fixed_length' ? 'display:none' : '' %>">
+                      <input type="date" class="ms-input" data-field="end_date" value="<%= plan.end_date ? new Date(plan.end_date).toISOString().split('T')[0] : '' %>" style="width:180px;" />
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="ms-separator">
+
+                <!-- Price -->
+                <div class="ms-field">
+                  <div class="ms-field-label">
+                    <span class="ms-label">Price</span>
+                  </div>
+                  <div class="ms-field-content">
+                    <div style="position:relative; width:160px;">
+                      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:#8D99AE;">&pound;</span>
+                      <input type="number" class="ms-input" data-field="price" value="<%= plan.price %>" style="width:160px;padding-left:22px;" step="0.01" min="0" />
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="ms-separator">
+
+                <!-- Available at -->
+                <div class="ms-field">
+                  <div class="ms-field-label">
+                    <span class="ms-label">Available at</span>
+                    <span class="ms-sublabel">Which locations offer this membership</span>
+                  </div>
+                  <div class="ms-field-content">
+                    <div class="ms-venue-chips" data-field="venue_ids">
+                      <% if (typeof allVenues !== 'undefined') { %>
+                        <% allVenues.forEach(function(v) { %>
+                          <% var isActive = plan.venue_ids && plan.venue_ids.indexOf(v.id) !== -1; %>
+                          <button type="button" class="ms-venue-chip <%= isActive ? 'active' : '' %>" data-venue-id="<%= v.id %>" onclick="msToggleVenue(this)"><%= v.title %></button>
+                        <% }); %>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="ms-separator">
+
+                <!-- Benefits -->
+                <div class="ms-field">
+                  <div class="ms-field-label">
+                    <span class="ms-label">Benefits</span>
+                    <span class="ms-sublabel">Describe what is included</span>
+                  </div>
+                  <div class="ms-field-content">
+                    <textarea class="ms-textarea" data-field="benefits" placeholder="e.g. Unlimited court access, priority booking..."><%= plan.benefits || '' %></textarea>
+                  </div>
+                </div>
+
+                <hr class="ms-separator">
+
+                <!-- Advance Booking Bonus -->
+                <div class="ms-field">
+                  <div class="ms-field-label">
+                    <span class="ms-label">Advance booking bonus</span>
+                    <span class="ms-sublabel">Extra days members can book ahead</span>
+                  </div>
+                  <div class="ms-field-content">
+                    <div class="ms-inline">
+                      <input type="number" class="ms-input" data-field="advance_booking_days" value="<%= plan.advance_booking_days %>" style="width:80px;" min="0" />
+                      <span class="ms-suffix">extra days</span>
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="ms-separator">
+
+                <!-- Discount Conditions -->
+                <div class="ms-field-full">
+                  <span class="ms-label">Discount conditions</span>
+                  <span class="ms-sublabel">Add one or more discounts that apply across bookings, private lessons, or activities.</span>
+
+                  <div class="ms-discounts-list">
+                    <% var discounts = plan.discounts || []; %>
+                    <% discounts.forEach(function(disc) { %>
+                      <div class="ms-discount-card" data-discount-id="<%= disc.id %>">
+                        <div class="ms-discount-header">
+                          <input type="text" class="ms-discount-name" data-field="condition_name" value="<%= disc.condition_name || '' %>" placeholder="Condition name (e.g. 20% off court bookings)" />
+                          <button type="button" class="ms-discount-chevron">
+                            <svg width="16" height="16" fill="none" stroke="#8D99AE" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                          </button>
+                          <button type="button" class="ms-discount-del" onclick="msRemoveDiscount(this)">
+                            <svg width="14" height="14" fill="none" stroke="#EF4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                          </button>
+                        </div>
+                        <div class="ms-discount-row">
+                          <span class="ms-row-label">Discount</span>
+                          <div class="ms-btn-group" data-field="discount_type">
+                            <button type="button" class="ms-btn-opt <%= (!disc.discount_type || disc.discount_type === 'percentage') ? 'active' : '' %>" data-value="percentage" onclick="msSetDiscountType(this)">%</button>
+                            <button type="button" class="ms-btn-opt <%= disc.discount_type === 'fixed' ? 'active' : '' %>" data-value="fixed" onclick="msSetDiscountType(this)">&pound; off</button>
+                          </div>
+                          <div class="ms-inline">
+                            <span class="ms-discount-type-label"><%= (!disc.discount_type || disc.discount_type === 'percentage') ? '%' : '\u00a3' %></span>
+                            <input type="number" class="ms-input" data-field="discount_value" value="<%= disc.discount_value || 0 %>" style="width:80px;" step="0.01" min="0" />
+                          </div>
+                        </div>
+                        <div class="ms-discount-row">
+                          <span class="ms-row-label">Applies to</span>
+                          <div class="ms-applies-group" data-field="applies_to">
+                            <% var appliesTo = disc.applies_to || []; %>
+                            <button type="button" class="ms-applies-btn <%= appliesTo.indexOf('bookings') !== -1 ? 'active' : '' %>" data-value="bookings" onclick="msToggleApplies(this)">Bookings</button>
+                            <button type="button" class="ms-applies-btn <%= appliesTo.indexOf('private_lessons') !== -1 ? 'active' : '' %>" data-value="private_lessons" onclick="msToggleApplies(this)">Private lessons</button>
+                            <button type="button" class="ms-applies-btn <%= appliesTo.indexOf('activities') !== -1 ? 'active' : '' %>" data-value="activities" onclick="msToggleApplies(this)">Activities</button>
+                          </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                          <span class="ms-row-label">Full court</span>
+                          <label class="ms-toggle">
+                            <input type="checkbox" data-field="full_court_discount" <%= disc.full_court_discount ? 'checked' : '' %> />
+                            <span class="ms-toggle-slider"></span>
+                          </label>
+                          <span style="font-size:12px; color:#8D99AE;">Discount applies to the member's share only</span>
+                        </div>
+                      </div>
+                    <% }); %>
+                  </div>
+
+                  <!-- Add discount condition button -->
+                  <button type="button" class="ms-add-btn" style="padding:8px 0; justify-content:flex-start;" onclick="msAddDiscount(this)">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add discount condition
+                  </button>
+                </div>
+              </div>
+            </div>
+          <% }); %>
+        <% } %>
+
+      </div>
+
+      <!-- Add New Plan Button -->
+      <div style="max-width:720px; margin-top:10px;">
+        <button type="button" class="ms-add-btn" onclick="msAddNewPlan()" style="border: 1px dashed #d1d5db; border-radius: 8px; justify-content: center; padding: 14px 16px; background: #FFFFFF;">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add New Membership
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // All venues data for new cards
+  var msAllVenues = <%- JSON.stringify(typeof allVenues !== 'undefined' ? allVenues : []) %>;
+
+  // ===== Toggle card expand/collapse =====
+  function msToggleCard(btn) {
+    var card = btn.closest('.ms-card');
+    var body = card.querySelector('.ms-card-body');
+    if (body.classList.contains('open')) {
+      body.classList.remove('open');
+      btn.classList.remove('expanded');
+    } else {
+      body.classList.add('open');
+      btn.classList.add('expanded');
+    }
+  }
+
+  // ===== Duration Type Toggle =====
+  function msSetDurationType(btn) {
+    var group = btn.closest('.ms-btn-group');
+    group.querySelectorAll('.ms-btn-opt').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+
+    var card = btn.closest('.ms-card');
+    var val = btn.getAttribute('data-value');
+    if (val === 'fixed_length') {
+      card.querySelector('.ms-duration-fixed').style.display = '';
+      card.querySelector('.ms-duration-enddate').style.display = 'none';
+    } else {
+      card.querySelector('.ms-duration-fixed').style.display = 'none';
+      card.querySelector('.ms-duration-enddate').style.display = '';
+    }
+  }
+
+  // ===== Discount Type Toggle =====
+  function msSetDiscountType(btn) {
+    var group = btn.closest('.ms-btn-group');
+    group.querySelectorAll('.ms-btn-opt').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+
+    var discCard = btn.closest('.ms-discount-card');
+    var val = btn.getAttribute('data-value');
+    var label = discCard.querySelector('.ms-discount-type-label');
+    if (label) label.textContent = val === 'percentage' ? '%' : '\u00a3';
+  }
+
+  // ===== Toggle venue chip =====
+  function msToggleVenue(chip) {
+    chip.classList.toggle('active');
+  }
+
+  // ===== Toggle applies-to button =====
+  function msToggleApplies(btn) {
+    btn.classList.toggle('active');
+  }
+
+  // ===== Remove a discount card from DOM =====
+  function msRemoveDiscount(btn) {
+    var discountCard = btn.closest('.ms-discount-card');
+    discountCard.style.transition = 'opacity 0.2s, transform 0.2s';
+    discountCard.style.opacity = '0';
+    discountCard.style.transform = 'translateX(-10px)';
+    setTimeout(function() { discountCard.remove(); }, 200);
+  }
+
+  // ===== Add a new discount card inside a plan =====
+  function msAddDiscount(btn) {
+    var list = btn.closest('.ms-field-full').querySelector('.ms-discounts-list');
+
+    var html = ''
+      + '<div class="ms-discount-card" data-discount-id="new">'
+      + '  <div class="ms-discount-header">'
+      + '    <input type="text" class="ms-discount-name" data-field="condition_name" value="" placeholder="Condition name (e.g. 20% off court bookings)" />'
+      + '    <button type="button" class="ms-discount-chevron"><svg width="16" height="16" fill="none" stroke="#8D99AE" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button>'
+      + '    <button type="button" class="ms-discount-del" onclick="msRemoveDiscount(this)"><svg width="14" height="14" fill="none" stroke="#EF4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>'
+      + '  </div>'
+      + '  <div class="ms-discount-row"><span class="ms-row-label">Discount</span>'
+      + '    <div class="ms-btn-group" data-field="discount_type"><button type="button" class="ms-btn-opt active" data-value="percentage" onclick="msSetDiscountType(this)">%</button><button type="button" class="ms-btn-opt" data-value="fixed" onclick="msSetDiscountType(this)">&pound; off</button></div>'
+      + '    <div class="ms-inline"><span class="ms-discount-type-label">%</span><input type="number" class="ms-input" data-field="discount_value" value="0" style="width:80px;" step="0.01" min="0" /></div>'
+      + '  </div>'
+      + '  <div class="ms-discount-row"><span class="ms-row-label">Applies to</span>'
+      + '    <div class="ms-applies-group" data-field="applies_to">'
+      + '      <button type="button" class="ms-applies-btn" data-value="bookings" onclick="msToggleApplies(this)">Bookings</button>'
+      + '      <button type="button" class="ms-applies-btn" data-value="private_lessons" onclick="msToggleApplies(this)">Private lessons</button>'
+      + '      <button type="button" class="ms-applies-btn" data-value="activities" onclick="msToggleApplies(this)">Activities</button>'
+      + '    </div>'
+      + '  </div>'
+      + '  <div style="display:flex;align-items:center;gap:10px;">'
+      + '    <span class="ms-row-label">Full court</span>'
+      + '    <label class="ms-toggle"><input type="checkbox" data-field="full_court_discount" /><span class="ms-toggle-slider"></span></label>'
+      + '    <span style="font-size:12px;color:#8D99AE;">Discount applies to the member\'s share only</span>'
+      + '  </div>'
+      + '</div>';
+
+    list.insertAdjacentHTML('beforeend', html);
+    var newDisc = list.lastElementChild;
+    newDisc.querySelector('[data-field="condition_name"]').focus();
+  }
+
+  // ===== Collect all discount data from a plan card =====
+  function msCollectDiscounts(card) {
+    var discounts = [];
+    card.querySelectorAll('.ms-discount-card').forEach(function(dc) {
+      var d = {};
+      d.condition_name = dc.querySelector('[data-field="condition_name"]').value.trim();
+
+      var dtGroup = dc.querySelector('[data-field="discount_type"]');
+      var dtActive = dtGroup ? dtGroup.querySelector('.ms-btn-opt.active') : null;
+      d.discount_type = dtActive ? dtActive.getAttribute('data-value') : 'percentage';
+
+      d.discount_value = parseFloat(dc.querySelector('[data-field="discount_value"]').value) || 0;
+
+      var appliesTo = [];
+      dc.querySelectorAll('[data-field="applies_to"] .ms-applies-btn.active').forEach(function(b) {
+        appliesTo.push(b.getAttribute('data-value'));
+      });
+      d.applies_to = appliesTo;
+
+      var fcCb = dc.querySelector('[data-field="full_court_discount"]');
+      d.full_court_discount = fcCb ? fcCb.checked : false;
+
+      discounts.push(d);
+    });
+    return discounts;
+  }
+
+  // ===== Collect plan data from a card =====
+  function msCollectPlanData(card) {
+    var data = {};
+    data.id = card.getAttribute('data-plan-id');
+    data.name = card.querySelector('[data-field="name"]').value.trim();
+
+    // Duration type
+    var dtGroup = card.querySelector('[data-field="duration_type"]');
+    var dtActive = dtGroup ? dtGroup.querySelector('.ms-btn-opt.active') : null;
+    data.duration_type = dtActive ? dtActive.getAttribute('data-value') : 'fixed_length';
+
+    data.duration_months = parseInt(card.querySelector('[data-field="duration_months"]').value) || 1;
+    var endDateInput = card.querySelector('[data-field="end_date"]');
+    data.end_date = endDateInput ? endDateInput.value : null;
+
+    data.price = parseFloat(card.querySelector('[data-field="price"]').value) || 0;
+    data.benefits = card.querySelector('[data-field="benefits"]').value.trim();
+    data.advance_booking_days = parseInt(card.querySelector('[data-field="advance_booking_days"]').value) || 0;
+
+    // Venues
+    var venueIds = [];
+    card.querySelectorAll('[data-field="venue_ids"] .ms-venue-chip.active').forEach(function(chip) {
+      venueIds.push(parseInt(chip.getAttribute('data-venue-id')));
+    });
+    data.venue_ids = venueIds;
+
+    // Discounts (multiple)
+    data.discounts = msCollectDiscounts(card);
+
+    return data;
+  }
+
+  // ===== Save All Plans =====
+  function msSaveAll() {
+    var saveBtn = document.getElementById('ms-save-all-btn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+
+    var cards = document.querySelectorAll('#ms-plan-list .ms-card');
+
+    // Step 1: Collect and validate all data BEFORE making any requests
+    var planDataList = [];
+    var hasEmptyName = false;
+
+    cards.forEach(function(card) {
+      var data = msCollectPlanData(card);
+      if (!data.name) {
+        hasEmptyName = true;
+        card.querySelector('[data-field="name"]').style.borderBottomColor = '#EF4444';
+        card.querySelector('[data-field="name"]').focus();
+        return;
+      }
+      planDataList.push({ card: card, data: data });
+    });
+
+    if (hasEmptyName) {
+      window.ajaxError('Please enter a name for all membership plans');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Changes';
+      return;
+    }
+
+    if (planDataList.length === 0) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Changes';
+      return;
+    }
+
+    // Step 2: Send requests only after all validation passes
+    var promises = planDataList.map(function(item) {
+      var card = item.card;
+      var data = item.data;
+      var planId = data.id;
+      var isNew = !planId || planId === 'new';
+      var url = isNew ? '/admin/settings/memberships' : '/admin/settings/memberships/' + planId;
+
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(function(r) {
+        if (!r.ok) {
+          return r.text().then(function(text) {
+            try { return JSON.parse(text); } catch(e) { return { success: false, message: 'Server error (' + r.status + ')' }; }
+          });
+        }
+        return r.json();
+      })
+      .then(function(resp) {
+        if (resp.success && isNew && resp.data && resp.data.id) {
+          card.setAttribute('data-plan-id', resp.data.id);
+        }
+        return resp;
+      });
+    });
+
+    Promise.all(promises)
+      .then(function(results) {
+        var allOk = results.every(function(r) { return r.success; });
+        if (allOk) {
+          window.ajaxSuccess('All membership plans saved successfully');
+          setTimeout(function() { window.location.reload(); }, 1200);
+        } else {
+          var failed = results.filter(function(r) { return !r.success; });
+          window.ajaxError(failed[0].message || 'Some plans failed to save');
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
+        }
+      })
+      .catch(function(err) {
+        window.ajaxError(err.message || 'Something went wrong while saving');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+      });
+  }
+
+  // ===== Delete Plan =====
+  function msDeletePlan(planId, btn) {
+    Swal.fire({
+      title: 'Delete Membership?',
+      text: 'Are you sure you want to delete this membership plan?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#2B2D42',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, delete it'
+    }).then(function(result) {
+      if (!result.isConfirmed) return;
+
+      var card = btn.closest('.ms-card');
+
+      // If it's a new unsaved card, just remove from DOM
+      if (!planId || planId === 'new') {
+        card.remove();
+        return;
+      }
+
+      fetch('/admin/settings/memberships/' + planId + '/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+      })
+      .then(function(r) {
+        if (!r.ok) {
+          return r.text().then(function(text) {
+            try { return JSON.parse(text); } catch(e) { return { success: false, message: 'Server error (' + r.status + ')' }; }
+          });
+        }
+        return r.json();
+      })
+      .then(function(data) {
+        if (data.success) {
+          card.style.transition = 'opacity 0.3s, transform 0.3s';
+          card.style.opacity = '0';
+          card.style.transform = 'translateX(-20px)';
+          setTimeout(function() { card.remove(); }, 300);
+          window.ajaxSuccess('Membership plan deleted');
+        } else {
+          window.ajaxError(data.message || 'Failed to delete');
+        }
+      })
+      .catch(function(err) { window.ajaxError(err.message || 'Something went wrong'); });
+    });
+  }
+
+  // ===== Discount card HTML helper =====
+  function msDiscountCardHtml() {
+    return ''
+      + '<div class="ms-discount-card" data-discount-id="new">'
+      + '  <div class="ms-discount-header">'
+      + '    <input type="text" class="ms-discount-name" data-field="condition_name" value="" placeholder="Condition name (e.g. 20% off court bookings)" />'
+      + '    <button type="button" class="ms-discount-chevron"><svg width="16" height="16" fill="none" stroke="#8D99AE" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button>'
+      + '    <button type="button" class="ms-discount-del" onclick="msRemoveDiscount(this)"><svg width="14" height="14" fill="none" stroke="#EF4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>'
+      + '  </div>'
+      + '  <div class="ms-discount-row"><span class="ms-row-label">Discount</span>'
+      + '    <div class="ms-btn-group" data-field="discount_type"><button type="button" class="ms-btn-opt active" data-value="percentage" onclick="msSetDiscountType(this)">%</button><button type="button" class="ms-btn-opt" data-value="fixed" onclick="msSetDiscountType(this)">&pound; off</button></div>'
+      + '    <div class="ms-inline"><span class="ms-discount-type-label">%</span><input type="number" class="ms-input" data-field="discount_value" value="0" style="width:80px;" step="0.01" min="0" /></div>'
+      + '  </div>'
+      + '  <div class="ms-discount-row"><span class="ms-row-label">Applies to</span>'
+      + '    <div class="ms-applies-group" data-field="applies_to">'
+      + '      <button type="button" class="ms-applies-btn" data-value="bookings" onclick="msToggleApplies(this)">Bookings</button>'
+      + '      <button type="button" class="ms-applies-btn" data-value="private_lessons" onclick="msToggleApplies(this)">Private lessons</button>'
+      + '      <button type="button" class="ms-applies-btn" data-value="activities" onclick="msToggleApplies(this)">Activities</button>'
+      + '    </div>'
+      + '  </div>'
+      + '  <div style="display:flex;align-items:center;gap:10px;">'
+      + '    <span class="ms-row-label">Full court</span>'
+      + '    <label class="ms-toggle"><input type="checkbox" data-field="full_court_discount" /><span class="ms-toggle-slider"></span></label>'
+      + '    <span style="font-size:12px;color:#8D99AE;">Discount applies to the member\'s share only</span>'
+      + '  </div>'
+      + '</div>';
+  }
+
+  // ===== Add New Plan Card =====
+  function msAddNewPlan() {
+    var list = document.getElementById('ms-plan-list');
+
+    // Build venue chips HTML
+    var venueChipsHtml = '';
+    msAllVenues.forEach(function(v) {
+      venueChipsHtml += '<button type="button" class="ms-venue-chip" data-venue-id="' + v.id + '" onclick="msToggleVenue(this)">' + v.title + '</button>';
+    });
+
+    var cardHtml = ''
+      + '<div class="ms-card" data-plan-id="new">'
+      + '  <div class="ms-card-header">'
+      + '    <svg class="ms-drag-handle" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="3" r="1.5"/><circle cx="11" cy="3" r="1.5"/><circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="5" cy="13" r="1.5"/><circle cx="11" cy="13" r="1.5"/></svg>'
+      + '    <input type="text" class="ms-card-name" data-field="name" value="" placeholder="Membership name..." />'
+      + '    <button type="button" class="ms-chevron expanded" onclick="msToggleCard(this)">'
+      + '      <svg width="16" height="16" fill="none" stroke="#8D99AE" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
+      + '    </button>'
+      + '    <button type="button" class="ms-delete-btn" onclick="msDeletePlan(null, this)">'
+      + '      <svg width="14" height="14" fill="none" stroke="#8D99AE" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
+      + '    </button>'
+      + '  </div>'
+      + '  <div class="ms-card-body open">'
+      // Duration
+      + '    <div class="ms-field">'
+      + '      <div class="ms-field-label"><span class="ms-label">Duration</span><span class="ms-sublabel">Set a fixed length or an end date</span></div>'
+      + '      <div class="ms-field-content">'
+      + '        <div style="margin-bottom:10px;"><div class="ms-btn-group" data-field="duration_type">'
+      + '          <button type="button" class="ms-btn-opt active" data-value="fixed_length" onclick="msSetDurationType(this)">Fixed length</button>'
+      + '          <button type="button" class="ms-btn-opt" data-value="end_date" onclick="msSetDurationType(this)">End date</button>'
+      + '        </div></div>'
+      + '        <div class="ms-duration-fixed ms-inline"><input type="number" class="ms-input" data-field="duration_months" value="12" style="width:80px;" min="1" /><span class="ms-suffix">months</span></div>'
+      + '        <div class="ms-duration-enddate" style="display:none;"><input type="date" class="ms-input" data-field="end_date" value="" style="width:180px;" /></div>'
+      + '      </div>'
+      + '    </div>'
+      + '    <hr class="ms-separator">'
+      // Price
+      + '    <div class="ms-field">'
+      + '      <div class="ms-field-label"><span class="ms-label">Price</span></div>'
+      + '      <div class="ms-field-content"><div style="position:relative;width:160px;"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:#8D99AE;">&pound;</span><input type="number" class="ms-input" data-field="price" value="0.00" style="width:160px;padding-left:22px;" step="0.01" min="0" /></div></div>'
+      + '    </div>'
+      + '    <hr class="ms-separator">'
+      // Available at
+      + '    <div class="ms-field">'
+      + '      <div class="ms-field-label"><span class="ms-label">Available at</span><span class="ms-sublabel">Which locations offer this membership</span></div>'
+      + '      <div class="ms-field-content"><div class="ms-venue-chips" data-field="venue_ids">' + venueChipsHtml + '</div></div>'
+      + '    </div>'
+      + '    <hr class="ms-separator">'
+      // Benefits
+      + '    <div class="ms-field">'
+      + '      <div class="ms-field-label"><span class="ms-label">Benefits</span><span class="ms-sublabel">Describe what is included</span></div>'
+      + '      <div class="ms-field-content"><textarea class="ms-textarea" data-field="benefits" placeholder="e.g. Unlimited court access, priority booking..."></textarea></div>'
+      + '    </div>'
+      + '    <hr class="ms-separator">'
+      // Advance booking bonus
+      + '    <div class="ms-field">'
+      + '      <div class="ms-field-label"><span class="ms-label">Advance booking bonus</span><span class="ms-sublabel">Extra days members can book ahead</span></div>'
+      + '      <div class="ms-field-content"><div class="ms-inline"><input type="number" class="ms-input" data-field="advance_booking_days" value="0" style="width:80px;" min="0" /><span class="ms-suffix">extra days</span></div></div>'
+      + '    </div>'
+      + '    <hr class="ms-separator">'
+      // Discount conditions
+      + '    <div class="ms-field-full">'
+      + '      <span class="ms-label">Discount conditions</span>'
+      + '      <span class="ms-sublabel">Add one or more discounts that apply across bookings, private lessons, or activities.</span>'
+      + '      <div class="ms-discounts-list"></div>'
+      + '      <button type="button" class="ms-add-btn" style="padding:8px 0;justify-content:flex-start;" onclick="msAddDiscount(this)">'
+      + '        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'
+      + '        Add discount condition'
+      + '      </button>'
+      + '    </div>'
+      + '  </div>'
+      + '</div>';
+
+    list.insertAdjacentHTML('beforeend', cardHtml);
+
+    // Scroll to and focus the new card
+    var newCard = list.lastElementChild;
+    newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    newCard.querySelector('[data-field="name"]').focus();
+  }
+</script>

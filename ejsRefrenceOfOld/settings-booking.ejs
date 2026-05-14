@@ -1,0 +1,492 @@
+<% var currentPage = 'settings-booking'; %>
+<% var canManageLocations = adminUser && adminUser.role === 2; %>
+<% var settingsHomeHref = canManageLocations ? '/admin/settings' : '/admin/settings/staff'; %>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  .bs-wrap * { font-family: 'Geist', 'Inter', sans-serif; box-sizing: border-box; }
+
+  /* ── Header ── */
+  .bs-header {
+    background: #FFFFFF;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px 12px 16px;
+    border-bottom: 0.8px solid #E7EBEF;
+    flex-shrink: 0;
+    min-height: 64px;
+  }
+  .bs-breadcrumb { display: flex; align-items: center; gap: 6px; }
+  .bs-bc-link {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 400; color: #8D99AE; text-decoration: none;
+  }
+  .bs-bc-link:hover { color: #2B2D42; }
+  .bs-bc-sep { font-size: 12px; color: rgba(141,153,174,0.4); }
+  .bs-bc-active { font-size: 12px; font-weight: 600; color: #2B2D42; }
+  .bs-bc-dim { font-size: 12px; font-weight: 400; color: #8D99AE; }
+  .bs-loc-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    height: 32px; padding: 0 10px;
+    background: #F2F4F7; border: 1px solid #E7EBEF;
+    box-shadow: 0px 1px 2px rgba(0,0,0,0.05);
+    border-radius: 4px;
+    font-size: 12px; font-weight: 500; color: #2B2D42; cursor: pointer;
+    white-space: nowrap;
+  }
+  .bs-loc-btn svg { flex-shrink: 0; }
+
+  /* ── Title Bar ── */
+  .bs-title-bar {
+    background: #FFFFFF;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 0.8px solid #E7EBEF;
+    flex-shrink: 0;
+  }
+  .bs-title-bar h1 { font-size: 16px; font-weight: 700; color: #2B2D42; line-height: 24px; margin: 0 0 2px; }
+  .bs-title-bar p  { font-size: 12px; font-weight: 400; color: #8D99AE; line-height: 16px; margin: 0; }
+  .bs-save-btn {
+    height: 32px; padding: 0 10px;
+    background: #2B2D42; border: none; border-radius: 4px;
+    font-family: 'Geist','Inter',sans-serif;
+    font-size: 12px; font-weight: 500; color: #FFFFFF;
+    cursor: pointer; white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .bs-save-btn:hover { background: #1a1b2e; }
+
+  /* ── Scrollable Content ── */
+  .bs-content { flex: 1; overflow-y: auto; background: #F2F4F7; }
+  .bs-inner { padding: 20px 24px 32px; max-width: 696px; }
+
+  /* ── Section block ── */
+  .bs-section { margin-bottom: 16px; }
+  .bs-section-hd { padding: 24px 0 4px; }
+  .bs-section-title { font-size: 14px; font-weight: 700; color: #2B2D42; line-height: 20px; }
+  .bs-section-desc  { font-size: 12px; font-weight: 400; color: #8D99AE; line-height: 16px; margin: 2px 0 0; }
+
+  /* ── Card ── */
+  .bs-card {
+    background: #FFFFFF;
+    border: 1px solid #E7EBEF;
+    border-radius: 10px;
+    padding: 0 16px;
+  }
+
+  /* ── Standard row: label left + control right ── */
+  .bs-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px;
+    padding: 16px 0;
+  }
+  .bs-row + .bs-row { border-top: 0.8px solid #E7EBEF; }
+  .bs-row-label {
+    display: flex; flex-direction: column; gap: 1px;
+    width: 256px; flex-shrink: 0;
+  }
+  .bs-label      { font-size: 12px; font-weight: 600; color: #2B2D42; line-height: 16px; }
+  .bs-label-desc { font-size: 11px; font-weight: 400; color: #8D99AE; line-height: 15px; }
+  .bs-row-ctrl { display: flex; align-items: center; gap: 8px; flex: 1; }
+
+  /* ── Number input (spinner-style) ── */
+  .bs-numfield {
+    display: flex; align-items: stretch;
+    width: 80px; height: 32px;
+    border: 1px solid #E7EBEF; border-radius: 4px;
+    overflow: hidden;
+    background: #FFFFFF;
+    box-shadow: 0px 1px 2px rgba(0,0,0,0.05);
+    flex-shrink: 0;
+  }
+  .bs-numfield input[type="number"] {
+    flex: 1; border: none; outline: none;
+    font-family: 'Geist','Inter',sans-serif;
+    font-size: 14px; font-weight: 400; color: #2B2D42;
+    padding: 0 8px;
+    background: transparent;
+    -moz-appearance: textfield;
+    min-width: 0;
+  }
+  .bs-numfield input[type="number"]::-webkit-outer-spin-button,
+  .bs-numfield input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .bs-num-arrows {
+    display: flex; flex-direction: column;
+    border-left: 1px solid #E7EBEF;
+    flex-shrink: 0;
+    width: 18px;
+  }
+  .bs-num-arrows button {
+    flex: 1; border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: #8D99AE; padding: 0; line-height: 1;
+    font-size: 8px;
+  }
+  .bs-num-arrows button:hover { background: #F2F4F7; }
+  .bs-num-arrows button:first-child { border-bottom: 1px solid #E7EBEF; }
+
+  .bs-numfield--sm { width: 56px; }
+  .bs-numfield--md { width: 64px; }
+
+  .bs-unit { font-size: 12px; font-weight: 400; color: #8D99AE; white-space: nowrap; }
+
+  /* ── Toggle switch ── */
+  .bs-switch { position: relative; display: inline-block; width: 36px; height: 20px; flex-shrink: 0; cursor: pointer; }
+  .bs-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .bs-switch-track {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: #E7EBEF; border: 1px solid rgba(0,0,0,0);
+    border-radius: 20px; transition: background 0.2s;
+  }
+  .bs-switch-track::before {
+    content: ''; position: absolute;
+    width: 16px; height: 16px;
+    left: 1.4px; top: 50%; transform: translateY(-50%);
+    background: #FFFFFF; border-radius: 50%; transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
+  .bs-switch input:checked ~ .bs-switch-track { background: #2B2D42; }
+  .bs-switch input:checked ~ .bs-switch-track::before { transform: translateY(-50%) translateX(16px); }
+  .bs-switch-label { font-size: 12px; font-weight: 400; color: #8D99AE; }
+
+  /* ── Time input ── */
+  .bs-time-field {
+    display: flex; align-items: stretch;
+    height: 28px; width: 115px;
+    border: 1px solid #E7EBEF; border-radius: 4px;
+    background: rgba(255,255,255,0);
+    box-shadow: 0px 1px 2px rgba(0,0,0,0.05);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .bs-time-field input[type="time"] {
+    flex: 1; border: none; outline: none;
+    font-family: 'Geist','Inter',sans-serif;
+    font-size: 14px; font-weight: 400; color: #2B2D42;
+    padding: 0 6px; background: transparent; min-width: 0;
+  }
+  .bs-to-text { font-size: 11px; font-weight: 400; color: #8D99AE; }
+
+  /* ── Match Protection tiers ── */
+  .bs-policy-wrap {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 24px;
+    padding: 16px 0 0;
+  }
+  .bs-policy-wrap + .bs-tier-list { padding-bottom: 0; }
+  .bs-tier-list { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  .bs-tier-row {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .bs-tier-info { display: flex; flex-direction: column; gap: 1px; }
+  .bs-tier-name    { font-size: 12px; font-weight: 500; color: #2B2D42; line-height: 16px; }
+  .bs-tier-players { font-size: 11px; font-weight: 400; color: #8D99AE; line-height: 16px; }
+  .bs-tier-ctrl { display: flex; align-items: center; gap: 4px; }
+  .bs-info-banner {
+    border-top: 0.91px solid #E7EBEF;
+    padding: 11px 0 16px;
+    font-size: 11px; font-weight: 400; color: #8D99AE; line-height: 16px;
+  }
+
+  /* ── Operating Hours card body ── */
+  .bs-oh-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+</style>
+
+<div class="bs-wrap" style="display:flex; height:100vh; overflow:hidden;">
+  <%- include('partials/settings-sidebar', { active: 'booking' }) %>
+
+  <!-- Main content column -->
+  <div style="flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden;">
+
+    <!-- Header / Breadcrumb -->
+    <div class="bs-header">
+      <div class="bs-breadcrumb">
+        <a href="<%= settingsHomeHref %>" class="bs-bc-link">
+          <svg width="14" height="14" fill="none" stroke="#8D99AE" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          Settings
+        </a>
+        <span class="bs-bc-sep">/</span>
+        <span class="bs-bc-active">Booking Settings</span>
+        <% if (typeof venues !== 'undefined' && venues && venues.length) { %>
+          <%
+            var _sv = venues.find(function(v){ return v.id == selectedVenueId; });
+            var _vname = _sv ? _sv.title : venues[0].title;
+          %>
+          <span class="bs-bc-sep">/</span>
+          <span class="bs-bc-dim"><%= _vname %></span>
+        <% } %>
+      </div>
+
+      <div class="venue-select-wrap">
+        <svg class="venue-pin-icon" fill="none" stroke="#8D99AE" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <select class="venue-location-select" id="booking-venue-select">
+          <% if (typeof venues !== 'undefined' && venues && venues.length) { %>
+            <% venues.forEach(function(v) { %>
+              <option value="<%= v.id %>" <%= (typeof selectedVenueId !== 'undefined' && selectedVenueId == v.id) ? 'selected' : '' %>><%= v.title %></option>
+            <% }); %>
+          <% } %>
+        </select>
+      </div>
+    </div>
+
+    <!-- Title Bar -->
+    <div class="bs-title-bar">
+      <div>
+        <h1>Booking Settings</h1>
+        <p>Configure booking rules and cancellation policies.</p>
+      </div>
+      <button class="bs-save-btn" type="button">Save Changes</button>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="bs-content">
+      <div class="bs-inner">
+
+        <!-- ── 1. Operating Hours ── -->
+        <div class="bs-section">
+          <div class="bs-section-hd" style="padding-top:0;">
+            <div class="bs-section-title">Operating Hours</div>
+            <p class="bs-section-desc">When the location is open for bookings. Applies to all courts unless manually blocked.</p>
+          </div>
+          <div class="bs-card">
+            <div class="bs-oh-body">
+              <!-- Toggle: Different every day -->
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label class="bs-switch">
+                  <input type="checkbox" id="diffEveryDay">
+                  <span class="bs-switch-track"></span>
+                </label>
+                <span class="bs-switch-label">Different every day</span>
+              </div>
+              <!-- Time range -->
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div class="bs-time-field">
+                  <input type="time" value="07:00">
+                </div>
+                <span class="bs-to-text">to</span>
+                <div class="bs-time-field">
+                  <input type="time" value="22:00">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 2. General ── -->
+        <div class="bs-section">
+          <div class="bs-section-hd">
+            <div class="bs-section-title">General</div>
+            <p class="bs-section-desc">Global booking rules that apply across all courts and sports.</p>
+          </div>
+          <div class="bs-card">
+
+            <!-- Max active bookings -->
+            <div class="bs-row">
+              <div class="bs-row-label">
+                <span class="bs-label">Max active bookings</span>
+                <span class="bs-label-desc">Maximum number of upcoming bookings a customer can hold at once</span>
+              </div>
+              <div class="bs-row-ctrl">
+                <div class="bs-numfield">
+                  <input type="number" id="maxBookings" value="5" min="1">
+                  <div class="bs-num-arrows">
+                    <button type="button" onclick="stepNum('maxBookings',1)">▲</button>
+                    <button type="button" onclick="stepNum('maxBookings',-1)">▼</button>
+                  </div>
+                </div>
+                <span class="bs-unit">bookings</span>
+              </div>
+            </div>
+
+            <!-- Advance booking window -->
+            <div class="bs-row">
+              <div class="bs-row-label">
+                <span class="bs-label">Advance booking window</span>
+                <span class="bs-label-desc">How far ahead customers can see and book on the mobile app</span>
+              </div>
+              <div class="bs-row-ctrl">
+                <div class="bs-numfield">
+                  <input type="number" id="advWindow" value="7" min="1">
+                  <div class="bs-num-arrows">
+                    <button type="button" onclick="stepNum('advWindow',1)">▲</button>
+                    <button type="button" onclick="stepNum('advWindow',-1)">▼</button>
+                  </div>
+                </div>
+                <span class="bs-unit">days</span>
+              </div>
+            </div>
+
+            <!-- Cancellation policy -->
+            <div class="bs-row">
+              <div class="bs-row-label">
+                <span class="bs-label">Cancellation policy</span>
+                <span class="bs-label-desc">Customers can cancel up to X hours before start for a full refund</span>
+              </div>
+              <div class="bs-row-ctrl">
+                <div class="bs-numfield">
+                  <input type="number" id="cancelPolicy" value="24" min="0">
+                  <div class="bs-num-arrows">
+                    <button type="button" onclick="stepNum('cancelPolicy',1)">▲</button>
+                    <button type="button" onclick="stepNum('cancelPolicy',-1)">▼</button>
+                  </div>
+                </div>
+                <span class="bs-unit">hours before start</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── 3. Activities ── -->
+        <div class="bs-section">
+          <div class="bs-section-hd">
+            <div class="bs-section-title">Activities</div>
+            <p class="bs-section-desc">Auto-cancel rules for group sessions and clinics.</p>
+          </div>
+          <div class="bs-card">
+
+            <!-- Auto-cancel threshold -->
+            <div class="bs-row">
+              <div class="bs-row-label">
+                <span class="bs-label">Auto-cancel threshold</span>
+                <span class="bs-label-desc">Cancel the activity if fewer than the minimum players have joined, X hours before it starts</span>
+              </div>
+              <div class="bs-row-ctrl">
+                <div class="bs-numfield bs-numfield--md">
+                  <input type="number" id="actAutoCancel" value="2" min="0">
+                  <div class="bs-num-arrows">
+                    <button type="button" onclick="stepNum('actAutoCancel',1)">▲</button>
+                    <button type="button" onclick="stepNum('actAutoCancel',-1)">▼</button>
+                  </div>
+                </div>
+                <span class="bs-unit">hours before</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── 4. Open Matches ── -->
+        <div class="bs-section">
+          <div class="bs-section-hd">
+            <div class="bs-section-title">Open Matches</div>
+            <p class="bs-section-desc">Rules governing how open match sessions are created and managed.</p>
+          </div>
+          <div class="bs-card">
+
+            <!-- Creation window -->
+            <div class="bs-row">
+              <div class="bs-row-label">
+                <span class="bs-label">Creation window</span>
+                <span class="bs-label-desc">Open matches must be created at least X hours before the booking starts</span>
+              </div>
+              <div class="bs-row-ctrl">
+                <div class="bs-numfield">
+                  <input type="number" id="creationWindow" value="2" min="0">
+                  <div class="bs-num-arrows">
+                    <button type="button" onclick="stepNum('creationWindow',1)">▲</button>
+                    <button type="button" onclick="stepNum('creationWindow',-1)">▼</button>
+                  </div>
+                </div>
+                <span class="bs-unit">hours before start</span>
+              </div>
+            </div>
+
+            <!-- Match Protection Policy -->
+            <div class="bs-row" style="flex-direction:column; align-items:stretch; gap:0; padding-bottom:0;">
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:24px; padding-bottom:12px;">
+                <div class="bs-row-label">
+                  <span class="bs-label">Match Protection Policy</span>
+                  <span class="bs-label-desc">To maximise court occupancy, the system prioritises matches based on how close they are to being full.</span>
+                </div>
+                <!-- Tiers -->
+                <div class="bs-tier-list">
+                  <!-- Developing -->
+                  <div class="bs-tier-row">
+                    <div class="bs-tier-info">
+                      <span class="bs-tier-name">Developing</span>
+                      <span class="bs-tier-players">Needs 2+ more players</span>
+                    </div>
+                    <div class="bs-tier-ctrl">
+                      <span class="bs-unit">Protected until</span>
+                      <div class="bs-numfield bs-numfield--sm">
+                        <input type="number" id="protectDeveloping" value="12" min="0">
+                        <div class="bs-num-arrows">
+                          <button type="button" onclick="stepNum('protectDeveloping',1)">▲</button>
+                          <button type="button" onclick="stepNum('protectDeveloping',-1)">▼</button>
+                        </div>
+                      </div>
+                      <span class="bs-unit">hrs before</span>
+                    </div>
+                  </div>
+                  <!-- Nearly Full -->
+                  <div class="bs-tier-row">
+                    <div class="bs-tier-info">
+                      <span class="bs-tier-name">Nearly Full</span>
+                      <span class="bs-tier-players">Needs 1 more player</span>
+                    </div>
+                    <div class="bs-tier-ctrl">
+                      <span class="bs-unit">Protected until</span>
+                      <div class="bs-numfield bs-numfield--sm">
+                        <input type="number" id="protectNearlyFull" value="2" min="0">
+                        <div class="bs-num-arrows">
+                          <button type="button" onclick="stepNum('protectNearlyFull',1)">▲</button>
+                          <button type="button" onclick="stepNum('protectNearlyFull',-1)">▼</button>
+                        </div>
+                      </div>
+                      <span class="bs-unit">hrs before</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Info text -->
+              <div class="bs-info-banner">
+                If a match fails to reach these thresholds, the court is released to the public calendar. Any regular booking made during this time will automatically cancel the Open Match and trigger instant player refunds.
+              </div>
+            </div>
+
+            <!-- Auto-cancel threshold -->
+            <div class="bs-row">
+              <div class="bs-row-label">
+                <span class="bs-label">Auto-cancel threshold</span>
+                <span class="bs-label-desc">Cancel the match if the required number of players isn't met (4 players for doubles and 2 players for singles), X hours before it starts</span>
+              </div>
+              <div class="bs-row-ctrl">
+                <div class="bs-numfield bs-numfield--md">
+                  <input type="number" id="omAutoCancel" value="1" min="0">
+                  <div class="bs-num-arrows">
+                    <button type="button" onclick="stepNum('omAutoCancel',1)">▲</button>
+                    <button type="button" onclick="stepNum('omAutoCancel',-1)">▼</button>
+                  </div>
+                </div>
+                <span class="bs-unit">hours before</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /bs-inner -->
+    </div><!-- /bs-content -->
+  </div><!-- /main column -->
+</div><!-- /bs-wrap -->
+
+<script>
+  function stepNum(id, delta) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var min = parseFloat(el.min);
+    var val = parseFloat(el.value) + delta;
+    if (!isNaN(min) && val < min) val = min;
+    el.value = val;
+  }
+</script>
