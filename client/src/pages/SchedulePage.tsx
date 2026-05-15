@@ -322,6 +322,11 @@ export default function SchedulePage() {
   const [bookings] = useState<Booking[]>(sampleBookings)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  // Bridges a coach-card click to the shared booking dialog hosted by CalendarGrid.
+  // The nonce lets repeated clicks on the same booking re-open the dialog.
+  const [coachBookingClick, setCoachBookingClick] = useState<{ booking: Booking; nonce: number } | null>(null)
+  // Bridges an empty-slot click on the coaches grid to the shared create-mode dialog.
+  const [coachSlotClick, setCoachSlotClick] = useState<{ courtId: string; time: string; nonce: number } | null>(null)
 
   const handlePrevDay = () => {
     setActiveDate((d) => { const n = new Date(d); n.setDate(d.getDate() - 1); return n })
@@ -406,11 +411,26 @@ export default function SchedulePage() {
             selectedSport={selectedSport}
           />
         ) : viewMode === "coaches" ? (
-          <CoachScheduleView
-            coaches={sampleCoaches}
-            bookings={sampleCoachBookings}
-            onBookingClick={handleBookingClick}
-          />
+          <>
+            <CoachScheduleView
+              coaches={sampleCoaches}
+              bookings={sampleCoachBookings}
+              onBookingClick={(b) => setCoachBookingClick({ booking: b, nonce: Date.now() })}
+              onSlotClick={(_coachId, time) => setCoachSlotClick({ courtId: "", time, nonce: Date.now() })}
+            />
+            {/* Hidden CalendarGrid hosts the shared booking dialog so coach cards/slots open the same modal as court cards/slots. */}
+            <CalendarGrid
+              courts={filteredCourts}
+              bookings={filteredBookings}
+              onBookingClick={handleBookingClick}
+              onSlotClick={handleSlotClick}
+              searchQuery={searchQuery}
+              bookingTypes={sampleBookingTypes}
+              hideGrid
+              externalBookingClick={coachBookingClick}
+              externalSlotClick={coachSlotClick}
+            />
+          </>
         ) : (
           <CalendarGrid
             courts={filteredCourts}

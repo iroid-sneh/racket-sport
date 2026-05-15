@@ -61,6 +61,7 @@ export interface Booking {
   isPaid?: boolean
   currentPlayers?: number
   maxPlayers?: number
+  title?: string
 }
 
 interface CalendarGridProps {
@@ -70,6 +71,12 @@ interface CalendarGridProps {
   onSlotClick?: (courtId: string, time: string) => void
   searchQuery?: string
   bookingTypes?: BookingType[]
+  /** When true, hide the visible grid and only mount the booking dialog. Used to share the dialog from the coaches view. */
+  hideGrid?: boolean
+  /** Set this from a parent to programmatically open the booking dialog in view mode for the given booking. The `nonce` ensures repeated clicks on the same booking re-trigger the open. */
+  externalBookingClick?: { booking: Booking; nonce: number } | null
+  /** Set this from a parent to programmatically open the booking dialog in create mode for an empty slot. `courtId` may be empty if the slot click came from a context (e.g. coaches view) where no court is preselected. */
+  externalSlotClick?: { courtId: string; time: string; nonce: number } | null
 }
 
 type BookingCategory = "booking" | "lesson" | "activity" | "block"
@@ -206,7 +213,7 @@ const LEVELS = [
   { value: 5, label: "Expert" },
 ]
 
-export function CalendarGrid({ courts, bookings, onBookingClick, onSlotClick, searchQuery = "", bookingTypes = [] }: CalendarGridProps) {
+export function CalendarGrid({ courts, bookings, onBookingClick, onSlotClick, searchQuery = "", bookingTypes = [], hideGrid = false, externalBookingClick = null, externalSlotClick = null }: CalendarGridProps) {
   // Derive duration options from admin-configured booking types
   const bookingServices = bookingTypes.map((bt) => {
     const mins = parseInt(bt.duration, 10) || 60
@@ -455,6 +462,29 @@ export function CalendarGrid({ courts, bookings, onBookingClick, onSlotClick, se
     }
   }
 
+  // When a parent (e.g. SchedulePage in coaches view) requests opening the dialog
+  // for a specific booking, run the same flow as an in-grid card click.
+  const lastExternalNonceRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!externalBookingClick) return
+    if (lastExternalNonceRef.current === externalBookingClick.nonce) return
+    lastExternalNonceRef.current = externalBookingClick.nonce
+    handleBookingCardClick(externalBookingClick.booking)
+    // handleBookingCardClick is stable in scope; deps intentionally narrow
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalBookingClick])
+
+  // Same idea for empty-slot clicks fired from the coaches view — opens the
+  // dialog in create mode using the shared form.
+  const lastExternalSlotNonceRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!externalSlotClick) return
+    if (lastExternalSlotNonceRef.current === externalSlotClick.nonce) return
+    lastExternalSlotNonceRef.current = externalSlotClick.nonce
+    handleSlotClick(externalSlotClick.courtId, externalSlotClick.time)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalSlotClick])
+
   const getCourtBookings = (courtId: string) => {
     return bookings.filter(b => b.courtId === courtId)
   }
@@ -463,6 +493,7 @@ export function CalendarGrid({ courts, bookings, onBookingClick, onSlotClick, se
 
   return (
     <>
+      {!hideGrid && (
       <div className="flex flex-1 overflow-auto">
         {/* Time Column */}
         <div className="sticky left-0 z-20 w-16 flex-shrink-0 border-r border-border bg-card">
@@ -619,6 +650,7 @@ export function CalendarGrid({ courts, bookings, onBookingClick, onSlotClick, se
           ))}
         </div>
       </div>
+      )}
 
       {/* Booking Dialog */}
       <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
@@ -726,7 +758,7 @@ export function CalendarGrid({ courts, bookings, onBookingClick, onSlotClick, se
                         <div className="rounded-xl bg-secondary border border-border px-4 py-3 flex items-center justify-between">
                           <div>
                             <p className="text-xs font-semibold text-foreground">
-                              {viewedBooking?.playerName ?? "Booking"}
+                              {viewedBooking?.title ?? viewedBooking?.playerName ?? "Booking"}
                             </p>
                             <p className="text-[10px] text-muted-foreground mt-0.5">
                               {formData.startTime}–{formData.endTime} · {courts.find(c => c.id === formData.court)?.name ?? "Court"}

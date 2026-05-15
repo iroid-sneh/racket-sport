@@ -22,6 +22,7 @@ interface CoachScheduleViewProps {
   coaches: Coach[]
   bookings: CoachBooking[]
   onBookingClick?: (booking: CoachBooking) => void
+  onSlotClick?: (coachId: string, time: string) => void
 }
 
 const timeSlots = [
@@ -62,7 +63,11 @@ function getBookingStyle(type: Booking["type"]) {
   }
 }
 
-export function CoachScheduleView({ coaches, bookings, onBookingClick }: CoachScheduleViewProps) {
+function getSlotDashStyle() {
+  return "border-indigo-300 text-indigo-400"
+}
+
+export function CoachScheduleView({ coaches, bookings, onBookingClick, onSlotClick }: CoachScheduleViewProps) {
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null)
   const [currentTimeStr, setCurrentTimeStr] = useState("")
 
@@ -92,7 +97,7 @@ export function CoachScheduleView({ coaches, bookings, onBookingClick }: CoachSc
       {/* Time column */}
       <div className="sticky left-0 z-20 w-16 flex-shrink-0 border-r border-border bg-card">
         {/* Header spacer */}
-        <div className="h-16 border-b border-border" />
+        <div className="h-14 border-b border-border" />
         <div className="relative">
           {hourSlots.map((time) => (
             <div
@@ -137,25 +142,53 @@ export function CoachScheduleView({ coaches, bookings, onBookingClick }: CoachSc
               className="flex-1 min-w-[220px] border-r border-border last:border-r-0 flex flex-col"
             >
               {/* Coach header */}
-              <div className="sticky top-0 z-10 flex h-16 flex-col items-center justify-center gap-1 border-b border-border bg-card px-3 pt-3">
-                <div className={cn(
-                  "flex h-7 w-7 shrink-0 aspect-square items-center justify-center rounded-full text-[10px] font-bold text-white",
-                  coach.colour
-                )}>
-                  {coach.initials}
-                </div>
-                <div className="text-center">
-                  <div className="text-xs font-semibold text-foreground leading-tight">{coach.name}</div>
-                  <div className="text-[10px] text-muted-foreground">{coach.sport}</div>
-                </div>
+              <div className="sticky top-0 z-10 flex h-14 flex-col items-center justify-center border-b border-border bg-card px-2">
+                <span className="text-xs font-bold tracking-wide text-foreground">
+                  {coach.name}
+                </span>
+                <span className="text-[10px] font-medium text-muted-foreground mt-0.5">
+                  {coach.sport}
+                </span>
               </div>
 
               {/* Schedule body */}
               <div className="relative flex-1">
-                {/* Hour grid lines */}
-                {hourSlots.map((time) => (
-                  <div key={time} className="h-12 border-b border-border/60" />
-                ))}
+                {/* Hour grid lines (with half-hour subdivision, mirrors Courts grid) */}
+                {hourSlots.map((time) => {
+                  const halfTime = time.replace(":00", ":30")
+                  return (
+                    <div key={time} className="h-12 border-b border-border/60">
+                      {/* Full-hour half slot */}
+                      <div
+                        className="group h-6 border-b border-border/30 cursor-pointer transition-colors"
+                        onClick={() => onSlotClick?.(coach.id, time)}
+                      >
+                        {onSlotClick && (
+                          <div className={cn(
+                            "hidden group-hover:flex h-full mx-1 mt-0.5 mb-0 rounded border border-dashed items-center justify-center",
+                            getSlotDashStyle()
+                          )}>
+                            <span className="text-[9px] font-semibold leading-none">+ {time}</span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Half-hour slot */}
+                      <div
+                        className="group h-6 cursor-pointer transition-colors"
+                        onClick={() => onSlotClick?.(coach.id, halfTime)}
+                      >
+                        {onSlotClick && (
+                          <div className={cn(
+                            "hidden group-hover:flex h-full mx-1 mb-0.5 rounded border border-dashed items-center justify-center",
+                            getSlotDashStyle()
+                          )}>
+                            <span className="text-[9px] font-semibold leading-none">+ {halfTime}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
 
                 {/* Unavailable — before availableFrom */}
                 {blockedTopHeight > 0 && (
