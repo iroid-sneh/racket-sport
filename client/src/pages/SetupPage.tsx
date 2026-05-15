@@ -7,10 +7,17 @@ import { SetupStaffPanel } from "@/components/setup/setup-staff-panel"
 import { SetupMembershipsPanel } from "@/components/setup/setup-memberships-panel"
 import { SetupSettingsPanel } from "@/components/setup/setup-settings-panel"
 import { SetupServicesPanel } from "@/components/setup/setup-services-panel"
-import { ChevronLeft, MapPin, ChevronDown } from "lucide-react"
+import { ChevronLeft, MapPin, ChevronDown, Check } from "lucide-react"
 import type { BookingType, CoachRef } from "@/lib/setup-types"
 import type { CourtsMap } from "@/components/setup/setup-courts-panel"
-import { useLocation } from "@/contexts/location-context"
+import { useLocation, type Location as ContextLocation } from "@/contexts/location-context"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 
 // ---- Types ----
 
@@ -72,13 +79,17 @@ function SettingsTopBar({
   locationName,
   showLocation,
   showLocationSelector,
-  onLocationSelector,
+  locations,
+  selectedLocationId,
+  onSelectLocation,
 }: {
   view: AdminSettingsView
   locationName?: string
   showLocation?: boolean
   showLocationSelector?: boolean
-  onLocationSelector?: () => void
+  locations: ContextLocation[]
+  selectedLocationId: string
+  onSelectLocation: (loc: ContextLocation) => void
 }) {
   return (
     <div className="flex items-center justify-between border-b border-border bg-card px-5 py-3 shrink-0">
@@ -102,14 +113,32 @@ function SettingsTopBar({
 
       {/* Location selector */}
       {showLocationSelector && (
-        <button
-          onClick={onLocationSelector}
-          className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 transition-colors"
-        >
-          <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-          {locationName ?? "All locations"}
-          <ChevronDown className="h-3 w-3 text-muted-foreground" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 transition-colors">
+              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+              {locationName ?? "Select location"}
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            {locations.map((loc) => (
+              <DropdownMenuItem
+                key={loc.id}
+                onSelect={() => onSelectLocation(loc)}
+                className="text-xs gap-2"
+              >
+                <Check
+                  className={cn(
+                    "h-3 w-3",
+                    loc.id === selectedLocationId ? "text-foreground" : "opacity-0"
+                  )}
+                />
+                {loc.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   )
@@ -120,7 +149,12 @@ function SettingsTopBar({
 export default function SetupPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
-  const { selectedLocation: contextLocation, isSuperAdmin } = useLocation()
+  const {
+    selectedLocation: contextLocation,
+    setSelectedLocation,
+    locations: contextLocations,
+    isSuperAdmin,
+  } = useLocation()
 
   // Default to "courts" for managers (no locations access)
   const [activeView, setActiveView] = useState<AdminSettingsView>(
@@ -190,10 +224,9 @@ export default function SetupPage() {
 
   // ---- Per-view config ----
 
-  // Locations applies across all locations → no location chip / selector.
-  // Memberships also applies across all locations.
-  // Other views are scoped to a single location.
-  const showLocationCrumb = activeView !== "locations" && activeView !== "memberships"
+  // Locations manages all locations → no breadcrumb chip / selector.
+  // All other views are scoped to (or viewed under) a single location.
+  const showLocationCrumb = activeView !== "locations"
   const showLocationSelector = isSuperAdmin && activeView !== "locations"
 
   // ---- Render ----
@@ -214,6 +247,9 @@ export default function SetupPage() {
           locationName={activeLocation?.name}
           showLocation={showLocationCrumb}
           showLocationSelector={showLocationSelector}
+          locations={contextLocations}
+          selectedLocationId={contextLocation.id}
+          onSelectLocation={setSelectedLocation}
         />
 
         {activeView === "locations" && (
