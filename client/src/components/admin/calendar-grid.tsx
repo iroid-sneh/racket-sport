@@ -726,7 +726,7 @@ export function CalendarGrid({ courts, bookings, onBookingClick, onSlotClick, se
                         <div className="rounded-xl bg-secondary border border-border px-4 py-3 flex items-center justify-between">
                           <div>
                             <p className="text-xs font-semibold text-foreground">
-                              {viewedBooking?.title ?? "Booking"}
+                              {viewedBooking?.playerName ?? "Booking"}
                             </p>
                             <p className="text-[10px] text-muted-foreground mt-0.5">
                               {formData.startTime}–{formData.endTime} · {courts.find(c => c.id === formData.court)?.name ?? "Court"}
